@@ -1,32 +1,16 @@
 [
   {
-    "Nombre": "prueba prueba, prueba prueba ",
+    "Nombre": "prueba prueba; prueba prueba \"prueba",
+    "RC": "10203040",
     "Edad": "45 años",
     "Fecha Nacimiento": "30/07/1980",
     "ID Atención": "7619431",
     "Especialidad": "Cirugia General",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "AO8O",
-    "Aseguradora": "37551",
-    "Procedimiento": "APENDICECTOMIA VIA LAPAROSCOPICA",
-    "Cama": "5I5407",
-    "timestamp": "2026-03-19 13:03:52",
-    "Número Documento": "10203040",
-    "Tipo de Documento": "RC"
-  },
-  {
-    "Nombre": "PRUEBAS SISTEMAS, CAPACITACION \"CAPACITACION",
-    "Edad": "86 años",
-    "Fecha Nacimiento": "29/01/1940",
-    "ID Atención": "6661064",
-    "Especialidad": "Cirugía Oral y Maxilofacial",
-    "Sexo Biológico": "Mujer",
-    "Diagnóstico": "T630",
+    "Diagnóstico": "A08O",
     "Aseguradora": "3755",
-    "Procedimiento": "PROSTATECTOMIA RADICAL POR LAPARASCOPIA",
-    "Cama": "5IS403",
-    "timestamp": "2026-03-19 12:52:51",
-    "Número Documento": "1234567",
-    "Tipo de Documento": "RC"
+    "Procedimiento": "APENDICECTOMIA VIA LAPAROSCOPICA",
+    "Cama": "SIS407",
+    "timestamp": "2026-03-19 13:47:41"
   }
 ]

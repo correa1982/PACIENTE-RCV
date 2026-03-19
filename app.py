@@ -176,14 +176,14 @@ def _preprocesar(imagen):
 
 def _ocr_intentos(ocr_reader, imagen_orig):
     """Ejecuta OCR con varias estrategias y devuelve el mejor texto."""
-    resultados_texto = []
+    resultados_lineas = []
 
     # Intento 1: imagen completa mejorada
     try:
         proc = _preprocesar(imagen_orig)
         lineas = ocr_reader.readtext(proc, detail=0, paragraph=False)
         lineas = _filtrar_ui(lineas)
-        resultados_texto.append("\n".join(lineas))
+        resultados_lineas.append(lineas)
         print(f"[OCR intento 1 - imagen completa]: {len(lineas)} líneas")
     except Exception as e:
         print(f"OCR intento 1 error: {e}")
@@ -195,19 +195,78 @@ def _ocr_intentos(ocr_reader, imagen_orig):
         proc2 = _preprocesar(mitad_inf)
         lineas2 = ocr_reader.readtext(proc2, detail=0, paragraph=False)
         lineas2 = _filtrar_ui(lineas2)
-        resultados_texto.append("\n".join(lineas2))
+        resultados_lineas.append(lineas2)
         print(f"[OCR intento 2 - mitad inferior]: {len(lineas2)} líneas")
     except Exception as e:
         print(f"OCR intento 2 error: {e}")
 
-    # Devolver el texto más largo (más información extraída)
-    if not resultados_texto:
+    # Intento 3: mitad superior (ahí suele aparecer el nombre)
+    try:
+        h = imagen_orig.shape[0]
+        mitad_sup = imagen_orig[: h // 2, :]
+        proc3 = _preprocesar(mitad_sup)
+        lineas3 = ocr_reader.readtext(proc3, detail=0, paragraph=False)
+        lineas3 = _filtrar_ui(lineas3)
+        resultados_lineas.append(lineas3)
+        print(f"[OCR intento 3 - mitad superior]: {len(lineas3)} líneas")
+    except Exception as e:
+        print(f"OCR intento 3 error: {e}")
+
+    if not resultados_lineas:
         return ""
-    mejor = max(resultados_texto, key=len)
-    return mejor
+
+    # Combinar líneas únicas de todos los intentos para no perder campos.
+    combinadas = []
+    vistos = set()
+    for lineas in resultados_lineas:
+        for linea in lineas:
+            normalizada = _normalizar_linea(linea)
+            if len(normalizada) < 2:
+                continue
+            clave = normalizada.lower()
+            if clave in vistos:
+                continue
+            vistos.add(clave)
+            combinadas.append(normalizada)
+
+    print(f"[OCR combinado]: {len(combinadas)} líneas únicas")
+    return "\n".join(combinadas)
 
 def _normalizar_linea(linea):
     return re.sub(r"\s+", " ", str(linea or "")).strip()
+
+def _limpiar_nombre(valor):
+    valor = _normalizar_linea(valor)
+    valor = valor.strip(" -,:;|\"'")
+    return re.sub(r"\s{2,}", " ", valor)
+
+def _es_linea_de_campo(linea):
+    linea_s = _normalizar_linea(linea).lower()
+    prefijos = (
+        "cc", "rc", "c.c", "edad", "fecha", "id", "especialidad",
+        "sexo", "diagnostico", "diagnóstico", "aseguradora",
+        "procedimiento", "cama", "nombre", "paciente",
+        "tipo de documento", "documento", "atencion", "atención",
+    )
+    return any(linea_s.startswith(prefijo) for prefijo in prefijos)
+
+def _nombre_valido(valor, permitir_un_solo_bloque=False):
+    valor = _limpiar_nombre(valor)
+    if not valor:
+        return False
+    if len(valor) < 5 or len(valor) > 120:
+        return False
+    if _es_linea_de_campo(valor):
+        return False
+    if not re.search(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]", valor):
+        return False
+    if any(char.isdigit() for char in valor):
+        return False
+    bloques = re.findall(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{2,}", valor)
+    if len(bloques) < 2:
+        if not (permitir_un_solo_bloque and len("".join(bloques)) >= 10):
+            return False
+    return True
 
 def _formatear_edad(valor):
     numero = re.search(r"\d{1,3}", str(valor or ""))
@@ -247,6 +306,69 @@ def _extraer_edad_desde_lineas(texto):
 
     return ""
 
+def _extraer_nombre_desde_lineas(texto):
+    """Extrae nombre incluso cuando no viene etiquetado explícitamente."""
+    lineas = [_normalizar_linea(linea) for linea in texto.splitlines() if _normalizar_linea(linea)]
+    if not lineas:
+        return ""
+
+    patron_nombre = re.compile(r"\b(?:nombre|paciente)\b", re.IGNORECASE)
+    patron_documento = re.compile(r"^(?:cc|rc|c\.c\.?)\b", re.IGNORECASE)
+
+    for idx, linea in enumerate(lineas):
+        if not patron_nombre.search(linea):
+            continue
+
+        match = re.search(r"(?:nombre|paciente)\s*[:\-]?\s*(.+)$", linea, re.IGNORECASE)
+        if match:
+            nombre = _limpiar_nombre(match.group(1))
+            if _nombre_valido(nombre):
+                return nombre
+
+        if idx + 1 < len(lineas):
+            nombre = _limpiar_nombre(lineas[idx + 1])
+            if _nombre_valido(nombre):
+                return nombre
+
+    indice_documento = next((idx for idx, linea in enumerate(lineas) if patron_documento.search(linea)), None)
+    if indice_documento is not None:
+        candidatos = lineas[:indice_documento]
+    else:
+        candidatos = [linea for linea in lineas if not _es_linea_de_campo(linea)]
+
+    for linea in candidatos:
+        nombre = _limpiar_nombre(linea)
+        if _nombre_valido(nombre):
+            return nombre
+
+    return ""
+
+def _extraer_nombre_por_contexto_documento(texto):
+    """Busca el nombre en líneas cercanas al número de documento (CC/RC)."""
+    lineas = [_normalizar_linea(linea) for linea in texto.splitlines() if _normalizar_linea(linea)]
+    if not lineas:
+        return ""
+
+    patron_documento = re.compile(r"\b(?:cc|rc|c\.c\.?)\b", re.IGNORECASE)
+    patron_corte = re.compile(
+        r"\b(?:cc|rc|c\.c\.?|edad|edac|fecha|id|especialidad|sexo|diagn[oó]stico|aseguradora|procedimiento|cama)\b",
+        re.IGNORECASE
+    )
+
+    idx_doc = next((idx for idx, linea in enumerate(lineas) if patron_documento.search(linea)), None)
+    if idx_doc is None:
+        return ""
+
+    # Revisar hasta 4 líneas antes de CC/RC para encontrar el nombre.
+    inicio = max(0, idx_doc - 4)
+    for idx in range(idx_doc - 1, inicio - 1, -1):
+        candidato = _limpiar_nombre(lineas[idx])
+        candidato = re.split(patron_corte, candidato, maxsplit=1)[0].strip(" -,:;|\"'")
+        if _nombre_valido(candidato, permitir_un_solo_bloque=True):
+            return candidato
+
+    return ""
+
 def extraer_datos(imagen):
     try:
         ocr_reader = inicializar_ocr()
@@ -274,6 +396,15 @@ def extraer_datos(imagen):
             print(f"✓ Edad (líneas OCR): {edad_detectada}")
         else:
             print("✗ Edad (líneas OCR): no encontrada")
+
+        nombre_detectado = _extraer_nombre_desde_lineas(texto)
+        if not nombre_detectado:
+            nombre_detectado = _extraer_nombre_por_contexto_documento(texto)
+        if nombre_detectado:
+            datos["Nombre"] = nombre_detectado
+            print(f"✓ Nombre (líneas OCR): {nombre_detectado}")
+        else:
+            print("✗ Nombre (líneas OCR): no encontrado")
 
         # Patrones flexibles: aceptan variaciones de OCR y tildes opcionales
         patrones = {
@@ -304,6 +435,10 @@ def extraer_datos(imagen):
         print("=== BUSCANDO PATRONES ===")
         for campo, patron in patrones.items():
             try:
+                if campo == "Nombre" and datos.get("Nombre"):
+                    print("• Nombre: se conserva valor detectado por líneas")
+                    continue
+
                 if campo == "Edad" and datos.get("Edad"):
                     print("• Edad: se conserva valor detectado por líneas")
                     continue
