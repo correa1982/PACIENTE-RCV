@@ -12,6 +12,8 @@ public sealed class ExtractionService
     private static readonly Regex AgeYearsRegex = new(@"\b(\d{1,3})\s*(?:a(?:ñ|n|fi|f|h)?os?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex NameTagRegex = new(@"\b(?:nombre|paciente)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex DocumentTagRegex = new(@"^(?:cc|rc|c\.c\.?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DiagnosticoTagRegex = new(@"\b(?:diagn[o0]s?t(?:i|1|l)?co|diag|dx)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DiagnosticoInlineRegex = new(@"(?ix)(?:diagn[o0]s?t(?:i|1|l)?co|diag|dx)\s*[:\-]?\s*(.+)$", RegexOptions.Compiled);
     private static readonly Regex LettersRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]", RegexOptions.Compiled);
     private static readonly Regex WordBlocksRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{2,}", RegexOptions.Compiled);
 
@@ -80,6 +82,12 @@ public sealed class ExtractionService
             datos["ID Atención"] = atencionDetectada;
         }
 
+        var diagnosticoDetectado = ExtractDiagnosticoFromLines(text);
+        if (!string.IsNullOrWhiteSpace(diagnosticoDetectado))
+        {
+            datos["Diagnóstico"] = diagnosticoDetectado;
+        }
+
         var nombreDetectado = ExtractNameFromLines(text);
         if (string.IsNullOrWhiteSpace(nombreDetectado))
         {
@@ -100,7 +108,7 @@ public sealed class ExtractionService
             ["ID Atención"] = new Regex(@"[Ii]d\s*[:\s]*[Aa]tenci[oó]n\s*[:\s]*(\d+)", options),
             ["Especialidad"] = new Regex(@"[Ee]specialidad\s*[:\s]+(.+?)(?=\n|[Ss]exo|$)", options | RegexOptions.Singleline),
             ["Sexo Biológico"] = new Regex(@"[Ss]exo\s*[Bb]iol[oó]gico\s*[:\s]*(\w+)", options),
-            ["Diagnóstico"] = new Regex(@"[Dd]iagn[oó]s?tico\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|$)", options | RegexOptions.Singleline),
+            ["Diagnóstico"] = new Regex(@"[Dd]iagn[oó]s?tico\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|[Pp]rocedimiento|[Cc]ama|$)", options | RegexOptions.Singleline),
             ["Aseguradora"] = new Regex(@"[Aa]seguradora\s*[:\s]*(.+?)(?=\n|[Pp]rocedimiento|$)", options | RegexOptions.Singleline),
             ["Procedimiento"] = new Regex(@"[Pp]rocedimiento\s*[:\s]*(.+?)(?=\n|[Cc]ama|$)", options | RegexOptions.Singleline),
             ["Cama"] = new Regex(@"[Cc]ama\s*[:\s]*([\w\d]{2,12})", options),
@@ -124,6 +132,11 @@ public sealed class ExtractionService
             }
 
             if (campo == "ID Atención" && !string.IsNullOrWhiteSpace(datos["ID Atención"]))
+            {
+                continue;
+            }
+
+            if (campo == "Diagnóstico" && !string.IsNullOrWhiteSpace(datos["Diagnóstico"]))
             {
                 continue;
             }
@@ -352,6 +365,70 @@ public sealed class ExtractionService
         return (string.Empty, string.Empty);
     }
 
+    private static string ExtractDiagnosticoFromLines(string text)
+    {
+        var lines = SplitLines(text);
+        if (lines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        for (var idx = 0; idx < lines.Count; idx++)
+        {
+            var line = lines[idx];
+            var normalized = NormalizeForOcrComparison(line);
+            if (!DiagnosticoTagRegex.IsMatch(normalized))
+            {
+                continue;
+            }
+
+            var parts = new List<string>();
+
+            var inlineMatch = DiagnosticoInlineRegex.Match(line);
+            if (inlineMatch.Success)
+            {
+                var inline = CleanDiagnosticoValue(inlineMatch.Groups[1].Value);
+                if (!string.IsNullOrWhiteSpace(inline))
+                {
+                    parts.Add(inline);
+                }
+            }
+            else
+            {
+                var afterTag = Regex.Replace(
+                    line,
+                    @"(?ix)^.*?\b(?:diagn[o0]s?t(?:i|1|l)?co|diag|dx)\b\s*[:\-]?\s*",
+                    string.Empty,
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Trim();
+
+                var cleanedAfterTag = CleanDiagnosticoValue(afterTag);
+                if (!string.IsNullOrWhiteSpace(cleanedAfterTag))
+                {
+                    parts.Add(cleanedAfterTag);
+                }
+            }
+
+            for (var j = idx + 1; j < lines.Count && j <= idx + 2; j++)
+            {
+                var next = lines[j];
+                if (IsDiagnosticStopLine(next) || IsFieldLine(next))
+                {
+                    break;
+                }
+
+                parts.Add(next);
+            }
+
+            var joined = CleanDiagnosticoValue(string.Join(" ", parts));
+            if (!string.IsNullOrWhiteSpace(joined))
+            {
+                return joined;
+            }
+        }
+
+        return string.Empty;
+    }
+
     private static string ExtractNameFromLines(string text)
     {
         var lines = SplitLines(text);
@@ -492,6 +569,59 @@ public sealed class ExtractionService
         };
 
         return prefixes.Any(prefix => value.StartsWith(prefix, StringComparison.Ordinal));
+    }
+
+    private static bool IsDiagnosticStopLine(string value)
+    {
+        var compact = NormalizeForOcrComparison(value).Replace(" ", string.Empty, StringComparison.Ordinal);
+        if (string.IsNullOrWhiteSpace(compact))
+        {
+            return true;
+        }
+
+        return compact.Contains("aseguradora", StringComparison.Ordinal) ||
+               compact.Contains("procedimiento", StringComparison.Ordinal) ||
+               compact.Contains("cama", StringComparison.Ordinal) ||
+               compact.Contains("especialidad", StringComparison.Ordinal) ||
+               compact.Contains("sexobiologico", StringComparison.Ordinal) ||
+               compact.StartsWith("sexo", StringComparison.Ordinal) ||
+               compact.StartsWith("idatencion", StringComparison.Ordinal) ||
+               compact.StartsWith("atencion", StringComparison.Ordinal) ||
+               compact.StartsWith("tipodedocumento", StringComparison.Ordinal) ||
+               compact.StartsWith("documento", StringComparison.Ordinal) ||
+               compact.StartsWith("edad", StringComparison.Ordinal) ||
+               compact.StartsWith("fecha", StringComparison.Ordinal) ||
+               compact.StartsWith("cc", StringComparison.Ordinal) ||
+               compact.StartsWith("rc", StringComparison.Ordinal);
+    }
+
+    private static string CleanDiagnosticoValue(string value)
+    {
+        var normalized = NormalizeLine(value);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        var cut = Regex.Split(
+            normalized,
+            @"(?i)\b(?:aseguradora|procedimiento|cama|especialidad|sexo(?:\s+biologico)?|id\s*atenci[oó]n|fecha\s*(?:de\s*)?nac(?:imiento)?|tipo\s+de\s+documento|documento)\b",
+            2);
+
+        normalized = (cut.FirstOrDefault() ?? string.Empty).Trim(" -,:;|\"'".ToCharArray());
+        normalized = NormalizeLine(normalized);
+
+        if (normalized.Length < 3)
+        {
+            return string.Empty;
+        }
+
+        if (normalized.All(ch => !char.IsLetter(ch)))
+        {
+            return string.Empty;
+        }
+
+        return normalized;
     }
 
     private static string FormatAge(string value)
