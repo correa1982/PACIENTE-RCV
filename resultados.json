@@ -1,16 +1,16 @@
 [
   {
-    "Nombre": "prueba prueba; prueba prueba \"prueba",
-    "RC": "10203040",
-    "Edad": "45 años",
-    "Fecha Nacimiento": "30/07/1980",
-    "ID Atención": "7619431",
-    "Especialidad": "Cirugia General",
+    "Nombre": "PRUEBAS SISTEMAS; CAPACITACION \"CAPACITACION",
+    "RC": "1234567",
+    "Edad": "86 años",
+    "Fecha Nacimiento": "29/01/1940",
+    "ID Atención": "6661064",
+    "Especialidad": "Cirugía Oral y Maxilofacial",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "A08O",
+    "Diagnóstico": "T630",
     "Aseguradora": "3755",
-    "Procedimiento": "APENDICECTOMIA VIA LAPAROSCOPICA",
-    "Cama": "SIS407",
-    "timestamp": "2026-03-19 13:47:41"
+    "Procedimiento": "PROSTATECTOMIA RADICAL POR LAPARASCOPIA",
+    "Cama": "SIS403",
+    "timestamp": "2026-03-19 13:54:40"
   }
 ]
