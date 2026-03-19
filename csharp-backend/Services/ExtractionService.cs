@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PacienteRcv.Services;
@@ -57,6 +58,28 @@ public sealed class ExtractionService
             datos["Edad"] = edadDetectada;
         }
 
+        var (tipoDocumento, numeroDocumento) = ExtractDocumentFromLines(text);
+        if (!string.IsNullOrWhiteSpace(numeroDocumento))
+        {
+            datos["RC"] = numeroDocumento;
+            datos["Número Documento"] = numeroDocumento;
+        }
+        if (!string.IsNullOrWhiteSpace(tipoDocumento))
+        {
+            datos["Tipo de Documento"] = tipoDocumento;
+        }
+        else if (!string.IsNullOrWhiteSpace(numeroDocumento))
+        {
+            // Si hay número pero no tipo legible, asumir CC para evitar dejarlo vacío.
+            datos["Tipo de Documento"] = "CC";
+        }
+
+        var atencionDetectada = ExtractAtencionFromLines(text);
+        if (!string.IsNullOrWhiteSpace(atencionDetectada))
+        {
+            datos["ID Atención"] = atencionDetectada;
+        }
+
         var nombreDetectado = ExtractNameFromLines(text);
         if (string.IsNullOrWhiteSpace(nombreDetectado))
         {
@@ -91,6 +114,16 @@ public sealed class ExtractionService
             }
 
             if (campo == "Edad" && !string.IsNullOrWhiteSpace(datos["Edad"]))
+            {
+                continue;
+            }
+
+            if (campo == "RC" && !string.IsNullOrWhiteSpace(datos["RC"]))
+            {
+                continue;
+            }
+
+            if (campo == "ID Atención" && !string.IsNullOrWhiteSpace(datos["ID Atención"]))
             {
                 continue;
             }
@@ -153,6 +186,170 @@ public sealed class ExtractionService
         }
 
         return string.Empty;
+    }
+
+    private static string ExtractAtencionFromLines(string text)
+    {
+        var lines = SplitLines(text);
+        if (lines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        for (var idx = 0; idx < lines.Count; idx++)
+        {
+            var normalized = NormalizeForOcrComparison(lines[idx]);
+            var compact = normalized.Replace(" ", string.Empty, StringComparison.Ordinal);
+
+            var hasAtencion = compact.Contains("atencion", StringComparison.Ordinal);
+            var hasId = compact.Contains("id", StringComparison.Ordinal) ||
+                        compact.Contains("ld", StringComparison.Ordinal) ||
+                        compact.Contains("1d", StringComparison.Ordinal);
+
+            if (hasAtencion || (hasId && compact.Contains("atenc", StringComparison.Ordinal)))
+            {
+                var candidates = new List<string> { lines[idx] };
+                if (idx + 1 < lines.Count)
+                {
+                    candidates.Add(lines[idx + 1]);
+                }
+
+                foreach (var candidate in candidates)
+                {
+                    var numero = ExtractNumericCandidate(candidate);
+                    if (!string.IsNullOrWhiteSpace(numero))
+                    {
+                        return numero;
+                    }
+                }
+            }
+        }
+
+        var globalMatch = Regex.Match(
+            text ?? string.Empty,
+            @"(?:\b(?:id|ld|1d)\b[\s:;,\-]{0,6}(?:aten\w+)?[\s:;,\-]{0,6})(\d[\d\s\-]{3,20}\d)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (globalMatch.Success)
+        {
+            var numero = ExtractNumericCandidate(globalMatch.Groups[1].Value);
+            if (!string.IsNullOrWhiteSpace(numero))
+            {
+                return numero;
+            }
+        }
+
+        foreach (var line in lines)
+        {
+            var normalized = NormalizeForOcrComparison(line).Replace(" ", string.Empty, StringComparison.Ordinal);
+            if (!normalized.Contains("atencion", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var numero = ExtractNumericCandidate(line);
+            if (!string.IsNullOrWhiteSpace(numero))
+            {
+                return numero;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static (string Tipo, string Numero) ExtractDocumentFromLines(string text)
+    {
+        var lines = SplitLines(text);
+        if (lines.Count == 0)
+        {
+            return (string.Empty, string.Empty);
+        }
+
+        for (var idx = 0; idx < lines.Count; idx++)
+        {
+            var line = lines[idx];
+            var normalized = NormalizeForOcrComparison(line);
+            var compact = normalized.Replace(" ", string.Empty, StringComparison.Ordinal);
+
+            var hasDocLabel = compact.Contains("documento", StringComparison.Ordinal) ||
+                              compact.Contains("identificacion", StringComparison.Ordinal) ||
+                              compact.Contains("identidad", StringComparison.Ordinal) ||
+                              compact.Contains("doc", StringComparison.Ordinal);
+
+            var tipoLinea = NormalizeDocumentType(line);
+            if (string.IsNullOrWhiteSpace(tipoLinea))
+            {
+                tipoLinea = NormalizeDocumentType(normalized);
+            }
+
+            if (!hasDocLabel && string.IsNullOrWhiteSpace(tipoLinea))
+            {
+                continue;
+            }
+
+            var candidates = new List<string> { line };
+            if (idx + 1 < lines.Count)
+            {
+                candidates.Add(lines[idx + 1]);
+            }
+            if (idx + 2 < lines.Count)
+            {
+                candidates.Add(lines[idx + 2]);
+            }
+
+            foreach (var candidate in candidates)
+            {
+                var numero = ExtractNumericCandidate(candidate);
+                if (string.IsNullOrWhiteSpace(numero))
+                {
+                    continue;
+                }
+
+                var tipo = tipoLinea;
+                if (string.IsNullOrWhiteSpace(tipo))
+                {
+                    tipo = NormalizeDocumentType(candidate);
+                }
+
+                return (tipo, numero);
+            }
+        }
+
+        var tipoNumeroGlobal = Regex.Match(
+            text ?? string.Empty,
+            @"(?ix)
+            (?:
+                (c\.?\s*c\.?|cc|c0|co|r\.?\s*c\.?|rc|t\.?\s*i\.?|ti|t1|c\.?\s*e\.?|ce|n\.?\s*i\.?\s*t\.?|nit|pasaporte|pa)
+            )
+            [\s:;,#\-]{0,8}
+            (\d[\d\s\-\.]{3,22}\d)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (tipoNumeroGlobal.Success)
+        {
+            var tipo = NormalizeDocumentType(tipoNumeroGlobal.Groups[1].Value);
+            var numero = ExtractNumericCandidate(tipoNumeroGlobal.Groups[2].Value);
+            if (!string.IsNullOrWhiteSpace(numero))
+            {
+                return (tipo, numero);
+            }
+        }
+
+        var docNumeroGlobal = Regex.Match(
+            text ?? string.Empty,
+            @"(?ix)
+            (?:documento|identificacion|identidad|doc)
+            [\s:;,#\-]{0,10}
+            (\d[\d\s\-\.]{3,22}\d)",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (docNumeroGlobal.Success)
+        {
+            var numero = ExtractNumericCandidate(docNumeroGlobal.Groups[1].Value);
+            if (!string.IsNullOrWhiteSpace(numero))
+            {
+                return ("CC", numero);
+            }
+        }
+
+        return (string.Empty, string.Empty);
     }
 
     private static string ExtractNameFromLines(string text)
@@ -322,6 +519,93 @@ public sealed class ExtractionService
         var normalized = NormalizeLine(value);
         normalized = normalized.Trim(" -,:;|\"'".ToCharArray());
         return WhitespaceRegex.Replace(normalized, " ").Trim();
+    }
+
+    private static string NormalizeForOcrComparison(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var decomposed = value.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(decomposed.Length);
+        foreach (var ch in decomposed)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(ch);
+            }
+        }
+
+        var normalized = builder.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant();
+        normalized = normalized
+            .Replace('0', 'o')
+            .Replace('1', 'i')
+            .Replace('5', 's')
+            .Replace('|', 'i');
+
+        return WhitespaceRegex.Replace(normalized, " ").Trim();
+    }
+
+    private static string NormalizeDocumentType(string value)
+    {
+        var normalized = NormalizeForOcrComparison(value).Replace(" ", string.Empty, StringComparison.Ordinal);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        if (normalized.Contains("pasaporte", StringComparison.Ordinal) || normalized == "pa")
+        {
+            return "PASAPORTE";
+        }
+
+        if (normalized.Contains("nit", StringComparison.Ordinal))
+        {
+            return "NIT";
+        }
+
+        if (normalized.Contains("rc", StringComparison.Ordinal))
+        {
+            return "RC";
+        }
+
+        if (normalized.Contains("ti", StringComparison.Ordinal) || normalized.Contains("t1", StringComparison.Ordinal))
+        {
+            return "TI";
+        }
+
+        if (normalized.Contains("ce", StringComparison.Ordinal))
+        {
+            return "CE";
+        }
+
+        if (normalized.Contains("cc", StringComparison.Ordinal) ||
+            normalized.Contains("co", StringComparison.Ordinal) ||
+            normalized.Contains("c0", StringComparison.Ordinal))
+        {
+            return "CC";
+        }
+
+        return string.Empty;
+    }
+
+    private static string ExtractNumericCandidate(string value)
+    {
+        var match = Regex.Match(value ?? string.Empty, @"\d[\d\s\-]{3,20}\d");
+        if (!match.Success)
+        {
+            return string.Empty;
+        }
+
+        var digits = new string(match.Value.Where(char.IsDigit).ToArray());
+        if (digits.Length is < 4 or > 14)
+        {
+            return string.Empty;
+        }
+
+        return digits;
     }
 
     private static string NormalizeLine(string value)

@@ -104,6 +104,45 @@
             color: #118847;
             animation: pulse-glow 1.4s ease-in-out infinite;
         }
+        .message.success-final .msg-inner {
+            background: linear-gradient(135deg, #e8fff2 0%, #c8f8df 45%, #b8eefc 100%);
+            border-color: #69d7a3;
+            color: #0a4a2d;
+            border-width: 2px;
+            box-shadow: 0 14px 34px rgba(13, 114, 64, 0.28);
+            padding: 20px 22px;
+            animation: success-pop 0.45s ease-out;
+        }
+        .message.success-final .msg-icon {
+            width: 44px;
+            height: 44px;
+            font-size: 24px;
+            background: #ffffff;
+            color: #129a53;
+            animation: pulse-glow-strong 1.1s ease-in-out infinite;
+        }
+        .message.success-final .msg-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+        .message.success-final .msg-text {
+            margin-top: 10px;
+            font-size: 17px;
+            line-height: 1.45;
+            font-weight: 600;
+        }
+        .message.info .msg-inner {
+            background: linear-gradient(135deg, #eef5ff 0%, #dcebff 52%, #d4f3ff 100%);
+            border-color: #9dc4ff;
+            color: #0b3f8a;
+            box-shadow: 0 8px 22px rgba(11, 94, 215, 0.16);
+        }
+        .message.info .msg-icon {
+            background: rgba(255, 255, 255, 0.9);
+            color: #0b5ed7;
+            animation: spin-soft 1.2s linear infinite;
+        }
         .message.error .msg-inner {
             background: linear-gradient(135deg, #fff1f1 0%, #ffe0e0 55%, #ffd4d4 100%);
             border-color: #f2afaf;
@@ -134,6 +173,19 @@
             0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(17, 136, 71, 0.18); }
             50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(17, 136, 71, 0); }
         }
+        @keyframes pulse-glow-strong {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(18, 154, 83, 0.3); }
+            50% { transform: scale(1.1); box-shadow: 0 0 0 12px rgba(18, 154, 83, 0); }
+        }
+        @keyframes success-pop {
+            0% { transform: scale(0.96); }
+            65% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes spin-soft {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         @keyframes shine {
             from { left: -130%; }
             to { left: 150%; }
@@ -158,7 +210,81 @@
         .link-section { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         .link-section a { display: inline-block; margin: 5px 10px; color: #0b5ed7; text-decoration: none; font-weight: bold; }
         .loading-init { text-align: center; padding: 100px 20px; }
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(9, 25, 49, 0.58);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            z-index: 2000;
+            transition: opacity 0.28s ease, visibility 0.28s ease;
+        }
+        .success-overlay.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .success-overlay-card {
+            width: min(680px, 96vw);
+            background: linear-gradient(135deg, #effff5 0%, #cdf8e0 46%, #bdefff 100%);
+            border: 2px solid #67d39f;
+            border-radius: 20px;
+            box-shadow: 0 24px 50px rgba(6, 83, 47, 0.35);
+            color: #0a4b2d;
+            text-align: center;
+            padding: 34px 28px;
+            transform: translateY(12px) scale(0.96);
+            animation: overlay-in 0.35s ease-out forwards;
+        }
+        .success-overlay-icon {
+            width: 62px;
+            height: 62px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #149955;
+            font-size: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(20, 153, 85, 0.22);
+            animation: pulse-glow-strong 1s ease-in-out infinite;
+        }
+        .success-overlay-title {
+            font-size: 28px;
+            line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+        .success-overlay-text {
+            margin-top: 12px;
+            font-size: 19px;
+            line-height: 1.45;
+            font-weight: 600;
+            color: #0d5b37;
+        }
+        .success-overlay-sub {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #1f6e4b;
+            opacity: 0.9;
+        }
+        @keyframes overlay-in {
+            from { transform: translateY(12px) scale(0.96); }
+            to { transform: translateY(0) scale(1); }
+        }
         @media (max-width: 768px) { .content-row { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .success-overlay-card { padding: 26px 18px; }
+            .success-overlay-title { font-size: 24px; }
+            .success-overlay-text { font-size: 17px; }
+        }
     </style>
 </head>
 <body>
@@ -214,12 +340,22 @@
     </div>
 </div>
 
+<div id="successOverlay" class="success-overlay" onclick="ocultarOverlayExito()">
+    <div class="success-overlay-card" role="status" aria-live="polite" onclick="event.stopPropagation()">
+        <div class="success-overlay-icon">🎉</div>
+        <div class="success-overlay-title" id="overlayTitulo">¡Proceso completado!</div>
+        <div class="success-overlay-text" id="overlayDetalle">Paciente ingresado al programa de riesgo cardiovascular.</div>
+        <div class="success-overlay-sub">Este aviso se cierra automáticamente</div>
+    </div>
+</div>
+
 <input type="file" id="fileInput" name="imagen" accept="image/*">
 
 <script>
     let ultimosDatos = null;
     let archivoSeleccionado = null;
     let procesando = false;
+    let overlayTimer = null;
 
     // Verificar si OCR está listo
     async function checkOCRStatus() {
@@ -318,6 +454,7 @@
 
         document.getElementById("loading").style.display = "block";
         document.getElementById("procesar").disabled = true;
+        mostrarMensaje("Estamos analizando la imagen y extrayendo los datos del paciente.", "info");
 
         try {
             const response = await fetch("/procesar", {
@@ -330,11 +467,13 @@
                 ultimosDatos = datos;
                 mostrarResultados(datos);
                 const nombrePaciente = (datos["Nombre"] || "").trim();
+                const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+                const camposDetectados = campos.filter(campo => String(datos[campo] || "").trim()).length;
                 const textoExito = nombrePaciente
-                    ? `Paciente ${nombrePaciente} ingresado al programa de riesgo cardiovascular.`
-                    : "Paciente ingresado al programa de riesgo cardiovascular.";
-                mostrarMensaje(textoExito, "success");
-                setTimeout(() => limpiarMensaje(), 4500);
+                    ? `Paciente ${nombrePaciente} ingresado al programa de riesgo cardiovascular. Campos detectados: ${camposDetectados}.`
+                    : `Documento procesado correctamente. Campos detectados: ${camposDetectados}.`;
+                mostrarMensaje(textoExito, "success-final");
+                setTimeout(() => limpiarMensaje(), 6000);
             } else {
                 const error = await response.json();
                 mostrarMensaje("❌ Error: " + (error.error || "Error desconocido"), "error");
@@ -429,9 +568,22 @@
     function mostrarMensaje(texto, tipo) {
         const msg = document.getElementById("mensaje");
         const textoLimpio = String(texto || "").replace(/^[✅❌⚠️ℹ️]+\s*/u, "").trim();
-        const titulo = tipo === "success" ? "Proceso completado" : "No se pudo completar";
-        const icono = tipo === "success" ? "🎉" : "⚠️";
-        const detalle = textoLimpio || (tipo === "success" ? "Paciente procesado correctamente." : "Intenta nuevamente.");
+        const esExito = tipo === "success" || tipo === "success-final";
+        const titulo = esExito
+            ? "Proceso completado"
+            : tipo === "info"
+                ? "Procesando imagen"
+                : "No se pudo completar";
+        const icono = esExito
+            ? "🎉"
+            : tipo === "info"
+                ? "⏳"
+                : "⚠️";
+        const detalle = textoLimpio || (esExito
+            ? "Paciente procesado correctamente."
+            : tipo === "info"
+                ? "Estamos trabajando en tu solicitud."
+                : "Intenta nuevamente.");
 
         msg.innerHTML = `
             <div class="msg-inner">
@@ -446,12 +598,43 @@
         msg.className = "message " + tipo;
         void msg.offsetWidth;
         msg.classList.add("show");
+
+        if (tipo === "success-final") {
+            mostrarOverlayExito(detalle);
+        }
     }
 
     function limpiarMensaje() {
         const msg = document.getElementById("mensaje");
         msg.className = "message";
         msg.innerHTML = "";
+    }
+
+    function mostrarOverlayExito(detalle) {
+        const overlay = document.getElementById("successOverlay");
+        const overlayDetalle = document.getElementById("overlayDetalle");
+        if (!overlay || !overlayDetalle) return;
+
+        overlayDetalle.textContent = detalle || "Paciente procesado correctamente.";
+        overlay.classList.add("show");
+
+        if (overlayTimer) {
+            clearTimeout(overlayTimer);
+        }
+
+        overlayTimer = setTimeout(() => {
+            ocultarOverlayExito();
+        }, 3200);
+    }
+
+    function ocultarOverlayExito() {
+        const overlay = document.getElementById("successOverlay");
+        if (!overlay) return;
+        overlay.classList.remove("show");
+        if (overlayTimer) {
+            clearTimeout(overlayTimer);
+            overlayTimer = null;
+        }
     }
 
     // Verificar OCR al cargar

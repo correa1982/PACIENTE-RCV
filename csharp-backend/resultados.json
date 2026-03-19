@@ -1,16 +1,18 @@
 ﻿[
   {
-    "Nombre": "MANUALES \"LUZ \" EE Cama sis404",
-    "RC": "",
+    "Nombre": "MANUALES \"LUZ \" lm Cama SIS404",
+    "RC": "5704909",
     "Edad": "5 años",
     "Fecha Nacimiento": "13/07/2020",
     "ID Atención": "5704909",
     "Especialidad": "Medicina General",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "R5IX - CEFALEA",
+    "Diagnóstico": "RSIX - CEFALEA",
     "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
     "Procedimiento": "LAVADO Y DESBRIDAMIENTO DE FRACTURA EXPUESTA DE ROTULA",
-    "Cama": "sis404",
-    "timestamp": "2026-03-19 14:48:04"
+    "Cama": "SIS404",
+    "Número Documento": "5704909",
+    "Tipo de Documento": "CC",
+    "timestamp": "2026-03-19 15:20:02"
   }
 ]
