@@ -58,6 +58,17 @@
             font-size: 13px;
         }
         .message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
+        .message.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
+        .result-item input {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 13px;
+            width: calc(100% - 148px);
+            color: #333;
+        }
+        .result-item input:focus { border-color: #0b5ed7; outline: none; }
+        .btn-save { background: #17a2b8; color: white; }
         .message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
         .button-group { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
         button { padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-size: 13px; font-weight: bold; }
@@ -117,6 +128,7 @@
                     <p>Se mostrarán aquí los datos extraídos</p>
                 </div>
                 <button class="btn-download" id="descargar" onclick="descargarExcel()" style="width: 100%; display: none; margin-top: 15px;">📥 Descargar Excel</button>
+                <button class="btn-save" id="guardar" onclick="guardarManual()" style="width: 100%; display: none; margin-top: 8px;">💾 Guardar datos</button>
             </div>
         </div>
 
@@ -131,6 +143,7 @@
 
 <script>
     let ultimosDatos = null;
+    let archivoSeleccionado = null;
 
     // Verificar si OCR está listo
     async function checkOCRStatus() {
@@ -182,6 +195,7 @@
     }
 
     function manejarArchivo(file) {
+        archivoSeleccionado = file;
         const reader = new FileReader();
         reader.onload = (e) => {
             document.getElementById("preview").src = e.target.result;
@@ -193,7 +207,7 @@
     }
 
     async function procesarImagen() {
-        const file = document.getElementById("fileInput").files[0];
+        const file = archivoSeleccionado || document.getElementById("fileInput").files[0];
         if (!file) {
             mostrarMensaje("❌ No hay imagen seleccionada", "error");
             return;
@@ -215,7 +229,11 @@
                 const datos = await response.json();
                 ultimosDatos = datos;
                 mostrarResultados(datos);
-                mostrarMensaje("✅ Datos extraídos correctamente", "success");
+                if (datos.duplicado) {
+                    mostrarMensaje("⚠️ Registro igual detectado, no se volvió a guardar", "success");
+                } else {
+                    mostrarMensaje("✅ Datos extraídos correctamente", "success");
+                }
                 setTimeout(() => limpiarMensaje(), 2000);
             } else {
                 const error = await response.json();
@@ -230,14 +248,62 @@
     }
 
     function mostrarResultados(datos) {
-        const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+        const campos = ["Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
         let html = "";
         campos.forEach(campo => {
-            const valor = datos[campo] || "-";
-            html += `<div class="result-item"><strong>${campo}:</strong> <span>${valor}</span></div>`;
+            const valor = datos[campo] || "";
+            const id = "campo_" + campo.replace(/\s+/g, "_");
+            html += `<div class="result-item"><strong>${campo}:</strong> <input id="${id}" value="${valor}" placeholder="-"></div>`;
         });
         document.getElementById("resultados").innerHTML = html;
         document.getElementById("descargar").style.display = "block";
+        document.getElementById("guardar").style.display = "block";
+    }
+
+    function leerDatosFormulario() {
+        const campos = ["Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+        const datos = {};
+        campos.forEach(campo => {
+            const id = "campo_" + campo.replace(/\s+/g, "_");
+            const el = document.getElementById(id);
+            datos[campo] = el ? el.value.trim() : "";
+        });
+        if (ultimosDatos && ultimosDatos.timestamp) {
+            datos.timestamp = ultimosDatos.timestamp;
+        }
+        return datos;
+    }
+
+    async function guardarManual() {
+        const datos = leerDatosFormulario();
+        if (!datos["Nombre"] && !datos["Número Documento"]) {
+            mostrarMensaje("❌ Completa al menos Nombre o número de documento antes de guardar", "error");
+            return;
+        }
+        try {
+            const resp = await fetch("/guardar-datos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datos)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                ultimosDatos = data;
+                if (data.updated) {
+                    mostrarMensaje("♻️ Datos actualizados sin duplicar", "success");
+                } else if (data.duplicado) {
+                    mostrarMensaje("⚠️ Ya existía un registro igual, no se duplicó", "success");
+                } else {
+                    mostrarMensaje("✅ Datos guardados correctamente", "success");
+                }
+                setTimeout(() => limpiarMensaje(), 3000);
+            } else {
+                const err = await resp.json();
+                mostrarMensaje("❌ " + (err.error || "Error al guardar"), "error");
+            }
+        } catch (e) {
+            mostrarMensaje("❌ Error: " + e.message, "error");
+        }
     }
 
     function descargarExcel() {
@@ -259,8 +325,10 @@
         document.getElementById("procesar").disabled = true;
         document.getElementById("resultados").innerHTML = '<p>Se mostrarán aquí los datos extraídos</p>';
         document.getElementById("descargar").style.display = "none";
+        document.getElementById("guardar").style.display = "none";
         limpiarMensaje();
         ultimosDatos = null;
+        archivoSeleccionado = null;
     }
 
     function mostrarMensaje(texto, tipo) {

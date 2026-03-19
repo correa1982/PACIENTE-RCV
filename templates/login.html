@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            width: 100%;
+            max-width: 380px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 {
+            color: #0b5ed7;
+            font-size: 28px;
+        }
+        .logo p {
+            color: #666;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 6px;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #0b5ed7;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #0b5ed7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: background 0.2s;
+        }
+        .btn-login:hover { background: #0056b3; }
+        .error {
+            background: #ffe0e0;
+            color: #c82333;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 14px;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #0b5ed7;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <h1>🔒 PACIENTE RCV</h1>
+        <p>Acceso restringido — Resultados</p>
+    </div>
+
+    {% if error %}
+    <div class="error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/login">
+        <div class="form-group">
+            <label for="usuario">Usuario</label>
+            <input type="text" id="usuario" name="usuario" placeholder="Ingresa tu usuario" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="contrasena">Contraseña</label>
+            <input type="password" id="contrasena" name="contrasena" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-login">Ingresar</button>
+    </form>
+
+    <a href="/" class="back-link">← Volver al inicio</a>
+</div>
+</body>
+</html>

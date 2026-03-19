@@ -170,7 +170,9 @@
         </div>
         <div class="auto-refresh">
             <button class="refresh-btn" onclick="cargarResultados()">🔄 Actualizar</button>
+            <a href="/descargar-todos" class="btn-primary" style="background:#28a745;">📥 Exportar Excel</a>
             <a href="/" class="btn-primary">← Volver Upload</a>
+            <a href="/logout" class="refresh-btn" style="text-decoration:none;">🚪 Cerrar sesión</a>
         </div>
     </div>
 
@@ -229,7 +231,7 @@
         document.getElementById("emptyState").style.display = "none";
         document.getElementById("content").style.display = "block";
 
-        const campos = ["Nombre", "RC", "Edad", "Especialidad", "Diagnóstico"];
+        const campos = ["Nombre", "Tipo de Documento", "Número Documento", "Edad", "Especialidad", "Diagnóstico"];
         let html = "<table><thead><tr>";
         
         campos.forEach(campo => {
@@ -244,7 +246,6 @@
             });
             html += `<td class="actions">
                 <button class="btn-small btn-download" onclick="verDetalles(${idx})">👁️ Ver</button>
-                <button class="btn-small btn-download" onclick="descargarExcel(${idx})">📥 Excel</button>
                 <button class="btn-small btn-delete" onclick="eliminar(${idx})">🗑️ Eliminar</button>
             </td></tr>`;
         });

@@ -96,7 +96,8 @@
         <div id="resultadosDiv" style="display: none;">
             <div class="resultado">
                 <p><strong>Nombre:</strong> <span id="resNombre">-</span></p>
-                <p><strong>RC:</strong> <span id="resRC">-</span></p>
+                <p><strong>Tipo de Documento:</strong> <span id="resTipoDocumento">-</span></p>
+                <p><strong>Número Documento:</strong> <span id="resNumeroDocumento">-</span></p>
                 <p><strong>Edad:</strong> <span id="resEdad">-</span></p>
                 <p><strong>Fecha Nacimiento:</strong> <span id="resFechaNac">-</span></p>
                 <p><strong>ID Atención:</strong> <span id="resIdAtencion">-</span></p>
@@ -188,7 +189,8 @@
         document.getElementById("resultadosDiv").style.display = "block";
         
         document.getElementById("resNombre").textContent = datos.Nombre || "-";
-        document.getElementById("resRC").textContent = datos.RC || "-";
+        document.getElementById("resTipoDocumento").textContent = datos["Tipo de Documento"] || "-";
+        document.getElementById("resNumeroDocumento").textContent = datos["Número Documento"] || "-";
         document.getElementById("resEdad").textContent = datos.Edad || "-";
         document.getElementById("resFechaNac").textContent = datos["Fecha Nacimiento"] || "-";
         document.getElementById("resIdAtencion").textContent = datos["ID Atención"] || "-";
