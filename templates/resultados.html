@@ -251,7 +251,7 @@
             });
             html += `<td class="actions">
                 <button class="btn-small btn-download" onclick="verDetalles(${idx})">👁️ Ver</button>
-                <button class="btn-small btn-download" onclick="descargarExcel(${idx})">📥 Excel</button>
+                <button class="btn-small btn-download" onclick="editarRegistro(${idx})">✏️ Editar</button>
                 <button class="btn-small btn-delete" onclick="eliminar(${idx})">🗑️ Eliminar</button>
             </td></tr>`;
         });
@@ -278,6 +278,54 @@
                 }
             })
             .catch(e => console.error("Error:", e));
+    }
+
+    function editarRegistro(idx) {
+        fetch("/api/resultados")
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(data => {
+                if (data && data[idx]) {
+                    const item = data[idx];
+                    let html = '<div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #0b5ed7;">';
+                    html += '<span style="color: #0b5ed7; font-weight: bold;">Modo edición:</span> Haz clic en cualquier campo para editarlo</div>';
+                    for (const [key, value] of Object.entries(item)) {
+                        html += `<div class="detail-row">
+                            <strong>${key}:</strong>
+                            <input type="text" value="${value || ''}" data-field="${key}" data-idx="${idx}" style="width: 60%; padding: 5px; border: 1px solid #ddd; border-radius: 3px;">
+                        </div>`;
+                    }
+                    html += '<div style="margin-top: 20px; display: flex; gap: 10px;"><button class="btn-primary" onclick="guardarCambios()" style="flex: 1;">💾 Guardar Cambios</button><button class="refresh-btn" onclick="cerrarModal()" style="flex: 1;">❌ Cancelar</button></div>';
+                    document.getElementById("detailContent").innerHTML = html;
+                    document.getElementById("detailModal").style.display = "block";
+                }
+            })
+            .catch(e => console.error("Error:", e));
+    }
+
+    function guardarCambios() {
+        const inputs = document.querySelectorAll("#detailContent input[type='text']");
+        const cambios = {};
+        let idx = null;
+        inputs.forEach(input => {
+            cambios[input.dataset.field] = input.value;
+            if (!idx) idx = input.dataset.idx;
+        });
+        fetch(`/actualizar/${idx}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cambios)
+        })
+        .then(() => {
+            cerrarModal();
+            cargarResultados();
+        })
+        .catch(e => {
+            alert("Error al guardar: " + e);
+            console.error("Error:", e);
+        });
     }
 
     function cerrarModal() {

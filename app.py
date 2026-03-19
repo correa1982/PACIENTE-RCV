@@ -517,8 +517,18 @@ def api_resultados():
 @login_requerido
 def descargar(idx):
     if 0 <= idx < len(resultados_list):
-        datos = resultados_list[idx]
+        datos = _migrar_registro(resultados_list[idx])
         df = pd.DataFrame([datos])
+        
+        # Reordenar columnas en el orden especificado
+        columnas_orden = [
+            "Tipo de Documento", "Número Documento", "Nombre", "ID Atención",
+            "Fecha Nacimiento", "Sexo Biológico", "Edad", "Diagnóstico",
+            "Especialidad", "Aseguradora", "Procedimiento", "Cama", "timestamp"
+        ]
+        columnas_disponibles = [col for col in columnas_orden if col in df.columns]
+        df = df[columnas_disponibles]
+        
         nombre_excel = f"paciente_{datos.get('timestamp', 'sin-fecha').replace(' ', '_').replace(':', '-')}.xlsx"
         ruta_excel = os.path.join(OUTPUT_FOLDER, nombre_excel)
         df.to_excel(ruta_excel, index=False)
@@ -531,7 +541,19 @@ def descargar_todos():
     if not resultados_list:
         return jsonify({"error": "No hay datos para exportar"}), 404
 
-    df = pd.DataFrame(resultados_list)
+    # Migrar todos los registros para normalizar campos
+    datos_migrados = [_migrar_registro(item) for item in resultados_list]
+    df = pd.DataFrame(datos_migrados)
+    
+    # Reordenar columnas en el orden especificado
+    columnas_orden = [
+        "Tipo de Documento", "Número Documento", "Nombre", "ID Atención",
+        "Fecha Nacimiento", "Sexo Biológico", "Edad", "Diagnóstico",
+        "Especialidad", "Aseguradora", "Procedimiento", "Cama", "timestamp"
+    ]
+    columnas_disponibles = [col for col in columnas_orden if col in df.columns]
+    df = df[columnas_disponibles]
+    
     nombre_excel = f"resultados_completos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     ruta_excel = os.path.join(OUTPUT_FOLDER, nombre_excel)
     df.to_excel(ruta_excel, index=False)
@@ -545,6 +567,19 @@ def eliminar(idx):
         resultados_list.pop(idx)
         guardar_resultados()
         return jsonify({"ok": True})
+    return jsonify({"error": "Índice no válido"}), 404
+
+@app.route("/actualizar/<int:idx>", methods=["PUT"])
+@login_requerido
+def actualizar(idx):
+    global resultados_list
+    if 0 <= idx < len(resultados_list):
+        datos = request.get_json()
+        if datos:
+            # Actualizar los campos del registro
+            resultados_list[idx].update(datos)
+            guardar_resultados()
+            return jsonify({"ok": True})
     return jsonify({"error": "Índice no válido"}), 404
 
 # Endpoint de debug para inspeccionar OCR
