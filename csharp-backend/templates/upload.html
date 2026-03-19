@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>OCR Pacientes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #f4f6f9; padding: 20px; }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,.1);
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+        .content-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        h2 { font-size: 16px; color: #333; margin-bottom: 15px; }
+        .upload-area {
+            border: 3px dashed #0b5ed7;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            background: #f9f9f9;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .upload-area:hover { background: #f0f7ff; }
+        .upload-area .icon { font-size: 40px; margin-bottom: 10px; }
+        #preview { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin-top: 15px; }
+        input[type="file"] { display: none; }
+        .result-item { padding: 8px 0; border-bottom: 1px solid #eee; }
+        .result-item strong { color: #0b5ed7; display: inline-block; width: 140px; font-size: 13px; }
+        .result-item span { font-size: 13px; color: #333; }
+        .empty-results { text-align: center; padding: 50px 20px; color: #999; }
+        .loading { display: none; text-align: center; padding: 30px; }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #28a745;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .message {
+            margin-top: 20px;
+            display: none;
+            opacity: 0;
+            transform: translateY(10px) scale(0.98);
+        }
+        .message.show {
+            display: block;
+            animation: message-in 0.35s ease-out forwards;
+        }
+        .message .msg-inner {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            padding: 14px 16px;
+        }
+        .message .msg-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .message .msg-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+        }
+        .message .msg-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .message .msg-text {
+            margin-top: 7px;
+            font-size: 13px;
+            line-height: 1.35;
+            text-align: center;
+        }
+        .message.success .msg-inner {
+            background: linear-gradient(135deg, #edfff4 0%, #d7f8e6 48%, #c8f1fa 100%);
+            border-color: #9fe2c0;
+            color: #0f5132;
+            box-shadow: 0 8px 22px rgba(21, 87, 36, 0.18);
+        }
+        .message.success .msg-icon {
+            background: rgba(255, 255, 255, 0.85);
+            color: #118847;
+            animation: pulse-glow 1.4s ease-in-out infinite;
+        }
+        .message.error .msg-inner {
+            background: linear-gradient(135deg, #fff1f1 0%, #ffe0e0 55%, #ffd4d4 100%);
+            border-color: #f2afaf;
+            color: #7a1d1d;
+            box-shadow: 0 8px 22px rgba(114, 28, 36, 0.16);
+        }
+        .message.error .msg-icon {
+            background: rgba(255, 255, 255, 0.9);
+            color: #b52b2b;
+        }
+        .message .msg-inner::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -130%;
+            width: 70%;
+            height: 100%;
+            transform: skewX(-20deg);
+            background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.4), rgba(255,255,255,0));
+            animation: shine 1.9s ease-out 1;
+            pointer-events: none;
+        }
+        @keyframes message-in {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(17, 136, 71, 0.18); }
+            50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(17, 136, 71, 0); }
+        }
+        @keyframes shine {
+            from { left: -130%; }
+            to { left: 150%; }
+        }
+        .result-item input {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 13px;
+            width: calc(100% - 148px);
+            color: #333;
+        }
+        .result-item input:focus { border-color: #0b5ed7; outline: none; }
+        .btn-save { background: #17a2b8; color: white; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
+        button { padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-size: 13px; font-weight: bold; }
+        .btn-primary { background: #28a745; color: white; }
+        .btn-primary:hover { background: #218838; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .link-section { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        .link-section a { display: inline-block; margin: 5px 10px; color: #0b5ed7; text-decoration: none; font-weight: bold; }
+        .loading-init { text-align: center; padding: 100px 20px; }
+        @media (max-width: 768px) { .content-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📋 OCR de Pacientes</h1>
+    <p class="subtitle">Sube la imagen del documento para extraer datos automáticamente</p>
+
+    <!-- PANTALLA DE CARGA -->
+    <div id="loading-init" class="loading-init">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-size: 16px; color: #666;">Inicializando OCR...</p>
+        <p style="font-size: 12px; color: #999; margin-top: 10px;">La primera vez puede tardar 30-60 segundos</p>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div id="main-content" style="display: none;">
+        <div class="content-row">
+            <!-- IMAGEN -->
+            <div>
+                <h2>📸 Cargar Imagen</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="icon">📤</div>
+                    <p><strong>Haz clic o arrastra</strong></p>
+                    <p style="font-size: 12px;">O pega (Ctrl+V)</p>
+                </div>
+                <img id="preview" alt="Previsualización">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px; font-size: 13px;">Extrayendo datos...</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn-primary" id="procesar" onclick="procesarImagen()" disabled>✅ Procesar</button>
+                    <button class="btn-secondary" onclick="limpiar()">🗑️ Limpiar</button>
+                </div>
+                <div class="message" id="mensaje"></div>
+            </div>
+
+            <!-- RESULTADOS -->
+            <div>
+                <h2>📊 Datos Extraídos</h2>
+                <div id="resultados" class="empty-results">
+                    <p>Se mostrarán aquí los datos extraídos</p>
+                </div>
+                <button class="btn-save" id="guardar" onclick="guardarManual()" style="width: 100%; display: none; margin-top: 8px;">💾 Guardar datos</button>
+            </div>
+        </div>
+
+        <div class="link-section">
+            <p>👥 ¿Eres administrador?</p>
+            <a href="/resultados">👁️ Ver Todos los Resultados</a>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="fileInput" name="imagen" accept="image/*">
+
+<script>
+    let ultimosDatos = null;
+    let archivoSeleccionado = null;
+    let procesando = false;
+
+    // Verificar si OCR está listo
+    async function checkOCRStatus() {
+        try {
+            const response = await fetch("/health");
+            const data = await response.json();
+            if (data.ocr_ready) {
+                document.getElementById("loading-init").style.display = "none";
+                document.getElementById("main-content").style.display = "block";
+                setupEventListeners();
+            } else if (data.ocr_error) {
+                document.getElementById("loading-init").style.display = "none";
+                document.getElementById("main-content").style.display = "block";
+                setupEventListeners();
+                mostrarMensaje(`⚠️ OCR no disponible: ${data.ocr_error}`, "error");
+            } else {
+                setTimeout(checkOCRStatus, 1000);
+            }
+        } catch (e) {
+            setTimeout(checkOCRStatus, 1000);
+        }
+    }
+
+    function setupEventListeners() {
+        const uploadArea = document.getElementById("uploadArea");
+        uploadArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = "#0056b3";
+            uploadArea.style.background = "#e7f1ff";
+        });
+        uploadArea.addEventListener("dragleave", () => {
+            uploadArea.style.borderColor = "#0b5ed7";
+            uploadArea.style.background = "#f9f9f9";
+        });
+        uploadArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = "#0b5ed7";
+            uploadArea.style.background = "#f9f9f9";
+            if (e.dataTransfer.files.length > 0) manejarArchivo(e.dataTransfer.files[0]);
+        });
+        uploadArea.addEventListener("click", () => document.getElementById("fileInput").click());
+        document.getElementById("fileInput").addEventListener("change", (e) => {
+            if (e.target.files.length > 0) manejarArchivo(e.target.files[0]);
+        });
+        document.addEventListener("paste", (e) => {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.startsWith("image/")) {
+                    manejarArchivo(item.getAsFile());
+                    break;
+                }
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter") return;
+
+            const target = e.target;
+            const tag = target && target.tagName ? target.tagName.toLowerCase() : "";
+            const esCampoTexto = tag === "input" || tag === "textarea" || (target && target.isContentEditable);
+            if (esCampoTexto) return;
+
+            const fileInput = document.getElementById("fileInput");
+            const file = archivoSeleccionado || (fileInput.files && fileInput.files[0]);
+            if (!file || procesando) return;
+
+            e.preventDefault();
+            procesarImagen();
+        });
+    }
+
+    function manejarArchivo(file) {
+        archivoSeleccionado = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById("preview").src = e.target.result;
+            document.getElementById("preview").style.display = "block";
+            document.getElementById("procesar").disabled = false;
+            limpiarMensaje();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function procesarImagen() {
+        const file = archivoSeleccionado || document.getElementById("fileInput").files[0];
+        if (!file) {
+            mostrarMensaje("❌ No hay imagen seleccionada", "error");
+            return;
+        }
+
+        if (procesando) return;
+        procesando = true;
+
+        const formData = new FormData();
+        formData.append("imagen", file);
+
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("procesar").disabled = true;
+
+        try {
+            const response = await fetch("/procesar", {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                const datos = await response.json();
+                ultimosDatos = datos;
+                mostrarResultados(datos);
+                const nombrePaciente = (datos["Nombre"] || "").trim();
+                const textoExito = nombrePaciente
+                    ? `Paciente ${nombrePaciente} ingresado al programa de riesgo cardiovascular.`
+                    : "Paciente ingresado al programa de riesgo cardiovascular.";
+                mostrarMensaje(textoExito, "success");
+                setTimeout(() => limpiarMensaje(), 4500);
+            } else {
+                const error = await response.json();
+                mostrarMensaje("❌ Error: " + (error.error || "Error desconocido"), "error");
+            }
+        } catch (error) {
+            mostrarMensaje("❌ Error: " + error.message, "error");
+        } finally {
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("procesar").disabled = false;
+            procesando = false;
+        }
+    }
+
+    function mostrarResultados(datos) {
+        const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+        let html = "";
+        campos.forEach(campo => {
+            const valor = datos[campo] || "";
+            const id = "campo_" + campo.replace(/\s+/g, "_");
+            html += `<div class="result-item"><strong>${campo}:</strong> <input id="${id}" value="${valor}" placeholder="-"></div>`;
+        });
+        document.getElementById("resultados").innerHTML = html;
+        document.getElementById("guardar").style.display = "block";
+    }
+
+    function leerDatosFormulario() {
+        const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+        const datos = {};
+        campos.forEach(campo => {
+            const id = "campo_" + campo.replace(/\s+/g, "_");
+            const el = document.getElementById(id);
+            datos[campo] = el ? el.value.trim() : "";
+        });
+        if (ultimosDatos && ultimosDatos.timestamp) {
+            datos.timestamp = ultimosDatos.timestamp;
+        }
+        return datos;
+    }
+
+    async function guardarManual() {
+        const datos = leerDatosFormulario();
+        if (!datos["Nombre"] && !datos["RC"]) {
+            mostrarMensaje("❌ Completa al menos Nombre o RC antes de guardar", "error");
+            return;
+        }
+        try {
+            const resp = await fetch("/guardar-datos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datos)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                ultimosDatos = data;
+                if (data.updated) {
+                    mostrarMensaje("♻️ Datos actualizados sin duplicar", "success");
+                } else if (data.duplicado) {
+                    mostrarMensaje("⚠️ Ya existía un registro igual, no se duplicó", "success");
+                } else {
+                    mostrarMensaje("✅ Datos guardados correctamente", "success");
+                }
+                setTimeout(() => limpiarMensaje(), 3000);
+            } else {
+                const err = await resp.json();
+                mostrarMensaje("❌ " + (err.error || "Error al guardar"), "error");
+            }
+        } catch (e) {
+            mostrarMensaje("❌ Error: " + e.message, "error");
+        }
+    }
+
+    function limpiar() {
+        document.getElementById("fileInput").value = "";
+        document.getElementById("preview").style.display = "none";
+        document.getElementById("procesar").disabled = true;
+        document.getElementById("resultados").innerHTML = '<p>Se mostrarán aquí los datos extraídos</p>';
+        document.getElementById("guardar").style.display = "none";
+        limpiarMensaje();
+        ultimosDatos = null;
+        archivoSeleccionado = null;
+    }
+
+    function escaparHtml(texto) {
+        return String(texto || "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
+
+    function mostrarMensaje(texto, tipo) {
+        const msg = document.getElementById("mensaje");
+        const textoLimpio = String(texto || "").replace(/^[✅❌⚠️ℹ️]+\s*/u, "").trim();
+        const titulo = tipo === "success" ? "Proceso completado" : "No se pudo completar";
+        const icono = tipo === "success" ? "🎉" : "⚠️";
+        const detalle = textoLimpio || (tipo === "success" ? "Paciente procesado correctamente." : "Intenta nuevamente.");
+
+        msg.innerHTML = `
+            <div class="msg-inner">
+                <div class="msg-top">
+                    <span class="msg-icon">${icono}</span>
+                    <span class="msg-title">${titulo}</span>
+                </div>
+                <div class="msg-text">${escaparHtml(detalle)}</div>
+            </div>
+        `;
+
+        msg.className = "message " + tipo;
+        void msg.offsetWidth;
+        msg.classList.add("show");
+    }
+
+    function limpiarMensaje() {
+        const msg = document.getElementById("mensaje");
+        msg.className = "message";
+        msg.innerHTML = "";
+    }
+
+    // Verificar OCR al cargar
+    checkOCRStatus();
+</script>
+
+</body>
+</html>

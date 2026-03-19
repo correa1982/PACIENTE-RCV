@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Resultados Extraídos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 22px;
+            font-size: 14px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d8d8d8;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #0b5ed7;
+        }
+        .btn-login {
+            width: 100%;
+            border: none;
+            background: #0b5ed7;
+            color: #fff;
+            border-radius: 6px;
+            padding: 11px 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-login:hover {
+            background: #0056b3;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            color: #0b5ed7;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 Acceso Admin</h1>
+        <p class="subtitle">Solo para ingresar a Resultados Extraídos</p>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="/login">
+            <label for="usuario">Usuario</label>
+            <input id="usuario" name="usuario" type="text" required autofocus>
+
+            <label for="contrasena">Contraseña</label>
+            <input id="contrasena" name="contrasena" type="password" required>
+
+            <button class="btn-login" type="submit">Ingresar</button>
+        </form>
+
+        <a class="back-link" href="/">← Volver al OCR</a>
+    </div>
+</body>
+</html>
