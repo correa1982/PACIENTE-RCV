@@ -144,6 +144,7 @@
 <script>
     let ultimosDatos = null;
     let archivoSeleccionado = null;
+    let procesando = false;
 
     // Verificar si OCR está listo
     async function checkOCRStatus() {
@@ -192,6 +193,22 @@
                 }
             }
         });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter") return;
+
+            const target = e.target;
+            const tag = target && target.tagName ? target.tagName.toLowerCase() : "";
+            const esCampoTexto = tag === "input" || tag === "textarea" || (target && target.isContentEditable);
+            if (esCampoTexto) return;
+
+            const fileInput = document.getElementById("fileInput");
+            const file = archivoSeleccionado || (fileInput.files && fileInput.files[0]);
+            if (!file || procesando) return;
+
+            e.preventDefault();
+            procesarImagen();
+        });
     }
 
     function manejarArchivo(file) {
@@ -213,6 +230,9 @@
             return;
         }
 
+        if (procesando) return;
+        procesando = true;
+
         const formData = new FormData();
         formData.append("imagen", file);
 
@@ -229,12 +249,8 @@
                 const datos = await response.json();
                 ultimosDatos = datos;
                 mostrarResultados(datos);
-                if (datos.duplicado) {
-                    mostrarMensaje("⚠️ Registro igual detectado, no se volvió a guardar", "success");
-                } else {
-                    mostrarMensaje("✅ Datos extraídos correctamente", "success");
-                }
-                setTimeout(() => limpiarMensaje(), 2000);
+                mostrarMensaje("paciente ingresado al programa de riesgo cardio vascular", "success");
+                setTimeout(() => limpiarMensaje(), 3000);
             } else {
                 const error = await response.json();
                 mostrarMensaje("❌ Error: " + (error.error || "Error desconocido"), "error");
@@ -244,11 +260,12 @@
         } finally {
             document.getElementById("loading").style.display = "none";
             document.getElementById("procesar").disabled = false;
+            procesando = false;
         }
     }
 
     function mostrarResultados(datos) {
-        const campos = ["Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+        const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
         let html = "";
         campos.forEach(campo => {
             const valor = datos[campo] || "";
@@ -261,7 +278,7 @@
     }
 
     function leerDatosFormulario() {
-        const campos = ["Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+        const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
         const datos = {};
         campos.forEach(campo => {
             const id = "campo_" + campo.replace(/\s+/g, "_");
@@ -276,8 +293,8 @@
 
     async function guardarManual() {
         const datos = leerDatosFormulario();
-        if (!datos["Nombre"] && !datos["Número Documento"]) {
-            mostrarMensaje("❌ Completa al menos Nombre o número de documento antes de guardar", "error");
+        if (!datos["Nombre"] && !datos["RC"]) {
+            mostrarMensaje("❌ Completa al menos Nombre o RC antes de guardar", "error");
             return;
         }
         try {

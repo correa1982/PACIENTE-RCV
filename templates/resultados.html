@@ -170,9 +170,9 @@
         </div>
         <div class="auto-refresh">
             <button class="refresh-btn" onclick="cargarResultados()">🔄 Actualizar</button>
-            <a href="/descargar-todos" class="btn-primary" style="background:#28a745;">📥 Exportar Excel</a>
+            <a href="/descargar-todos" class="btn-primary" style="background:#198754;">📥 Excel General</a>
             <a href="/" class="btn-primary">← Volver Upload</a>
-            <a href="/logout" class="refresh-btn" style="text-decoration:none;">🚪 Cerrar sesión</a>
+            <a href="/logout" class="refresh-btn" style="text-decoration: none;">🚪 Cerrar sesión</a>
         </div>
     </div>
 
@@ -241,11 +241,17 @@
 
         resultados.forEach((item, idx) => {
             html += "<tr>";
+            const tipoDocumento = item["Tipo de Documento"] || (item["RC"] ? "RC" : "");
+            const numeroDocumento = item["Número Documento"] || item["RC"] || "";
             campos.forEach(campo => {
-                html += `<td>${item[campo] || '-'}</td>`;
+                let valor = item[campo] || "";
+                if (campo === "Tipo de Documento") valor = tipoDocumento;
+                if (campo === "Número Documento") valor = numeroDocumento;
+                html += `<td>${valor || '-'}</td>`;
             });
             html += `<td class="actions">
                 <button class="btn-small btn-download" onclick="verDetalles(${idx})">👁️ Ver</button>
+                <button class="btn-small btn-download" onclick="descargarExcel(${idx})">📥 Excel</button>
                 <button class="btn-small btn-delete" onclick="eliminar(${idx})">🗑️ Eliminar</button>
             </td></tr>`;
         });

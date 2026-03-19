@@ -3,121 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión</title>
+    <title>Login - Resultados Extraídos</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: Arial, sans-serif;
             background: #f4f6f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
         .card {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
             width: 100%;
-            max-width: 380px;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            padding: 30px;
         }
-        .logo {
+        h1 {
             text-align: center;
-            margin-bottom: 30px;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 24px;
         }
-        .logo h1 {
-            color: #0b5ed7;
-            font-size: 28px;
-        }
-        .logo p {
+        .subtitle {
+            text-align: center;
             color: #666;
+            margin-bottom: 22px;
             font-size: 14px;
-            margin-top: 6px;
-        }
-        .form-group {
-            margin-bottom: 18px;
         }
         label {
             display: block;
+            margin-bottom: 6px;
+            color: #333;
             font-size: 13px;
             font-weight: bold;
-            color: #444;
-            margin-bottom: 6px;
         }
-        input[type="text"],
-        input[type="password"] {
+        input {
             width: 100%;
-            padding: 11px 14px;
-            border: 1px solid #ddd;
+            padding: 11px 12px;
+            border: 1px solid #d8d8d8;
             border-radius: 6px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
+            margin-bottom: 14px;
+            font-size: 14px;
         }
-        input[type="text"]:focus,
-        input[type="password"]:focus {
+        input:focus {
+            outline: none;
             border-color: #0b5ed7;
         }
         .btn-login {
             width: 100%;
-            padding: 12px;
-            background: #0b5ed7;
-            color: white;
             border: none;
+            background: #0b5ed7;
+            color: #fff;
             border-radius: 6px;
-            font-size: 16px;
+            padding: 11px 12px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 6px;
-            transition: background 0.2s;
         }
-        .btn-login:hover { background: #0056b3; }
+        .btn-login:hover {
+            background: #0056b3;
+        }
         .error {
-            background: #ffe0e0;
-            color: #c82333;
+            background: #f8d7da;
+            color: #721c24;
             border: 1px solid #f5c6cb;
             border-radius: 6px;
-            padding: 10px 14px;
-            font-size: 14px;
-            margin-bottom: 18px;
+            padding: 10px;
+            margin-bottom: 14px;
+            font-size: 13px;
             text-align: center;
         }
         .back-link {
             display: block;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 14px;
             color: #0b5ed7;
-            font-size: 13px;
             text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
         }
-        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-<div class="card">
-    <div class="logo">
-        <h1>🔒 PACIENTE RCV</h1>
-        <p>Acceso restringido — Resultados</p>
-    </div>
+    <div class="card">
+        <h1>🔐 Acceso Admin</h1>
+        <p class="subtitle">Solo para ingresar a Resultados Extraídos</p>
 
-    {% if error %}
-    <div class="error">⚠️ {{ error }}</div>
-    {% endif %}
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
 
-    <form method="POST" action="/login">
-        <div class="form-group">
+        <form method="POST" action="/login">
             <label for="usuario">Usuario</label>
-            <input type="text" id="usuario" name="usuario" placeholder="Ingresa tu usuario" required autofocus>
-        </div>
-        <div class="form-group">
-            <label for="contrasena">Contraseña</label>
-            <input type="password" id="contrasena" name="contrasena" placeholder="••••••••" required>
-        </div>
-        <button type="submit" class="btn-login">Ingresar</button>
-    </form>
+            <input id="usuario" name="usuario" type="text" required autofocus>
 
-    <a href="/" class="back-link">← Volver al inicio</a>
-</div>
+            <label for="contrasena">Contraseña</label>
+            <input id="contrasena" name="contrasena" type="password" required>
+
+            <button class="btn-login" type="submit">Ingresar</button>
+        </form>
+
+        <a class="back-link" href="/">← Volver al OCR</a>
+    </div>
 </body>
 </html>

@@ -14,22 +14,21 @@ import hashlib
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "rcv-secret-2026-cambia-esto")
 
-# Credenciales de acceso a resultados
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASSWORD_HASH = hashlib.sha256(
     os.environ.get("ADMIN_PASSWORD", "admin123").encode()
 ).hexdigest()
 
-def _hash_password(pw):
-    return hashlib.sha256(pw.encode()).hexdigest()
+def _hash_password(password):
+    return hashlib.sha256(str(password).encode()).hexdigest()
 
 def login_requerido(f):
     @wraps(f)
-    def decorated(*args, **kwargs):
+    def decorado(*args, **kwargs):
         if not session.get("autenticado"):
             return redirect(url_for("login"))
         return f(*args, **kwargs)
-    return decorated
+    return decorado
 
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "output"
@@ -56,8 +55,11 @@ def _migrar_registro(registro):
         return {}
 
     item = dict(registro)
-    if "RC" in item and "Número Documento" not in item:
-        item["Número Documento"] = item.get("RC", "")
+    rc_valor = str(item.get("RC", "")).strip()
+    if rc_valor and not str(item.get("Número Documento", "")).strip():
+        item["Número Documento"] = rc_valor
+    if rc_valor and not str(item.get("Tipo de Documento", "")).strip():
+        item["Tipo de Documento"] = "RC"
     item.setdefault("Tipo de Documento", "")
     item.setdefault("Número Documento", "")
     item.pop("RC", None)
@@ -83,7 +85,7 @@ def _normalizar_texto(valor):
 def _firma_datos(datos):
     """Firma estable para comparar registros sin usar timestamp."""
     campos = [
-        "Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "ID Atención",
+        "Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención",
         "Especialidad", "Sexo Biológico", "Diagnóstico",
         "Aseguradora", "Procedimiento", "Cama"
     ]
@@ -138,12 +140,6 @@ _UI_KEYWORDS = [
     "previsualización", "previsualizacion", "o pega", "upload", "subir imagen",
 ]
 
-_ETIQUETAS_DOC_DESCARTAR = {
-    "NOMBRE", "PACIENTE", "EDAD", "FECHA", "ID", "ESPECIALIDAD",
-    "SEXO", "DIAGNOSTICO", "DIAGNÓSTICO", "ASEGURADORA",
-    "PROCEDIMIENTO", "CAMA", "ATENCION", "ATENCIÓN"
-}
-
 def _filtrar_ui(lineas):
     """Elimina líneas que pertenecen a la interfaz web (no al documento)."""
     resultado = []
@@ -155,44 +151,6 @@ def _filtrar_ui(lineas):
             continue
         resultado.append(linea)
     return resultado
-
-def _normalizar_linea(linea):
-    return re.sub(r"\s+", " ", str(linea or "")).strip()
-
-def _buscar_documento_en_lineas(lineas):
-    for idx, linea in enumerate(lineas):
-        linea_norm = _normalizar_linea(linea)
-        match = re.match(r"^([A-Za-z][A-Za-z.\- ]{0,20}?)\s*[:\-]?\s*(\d[\d\s.\-]{4,20})\b", linea_norm)
-        if not match:
-            continue
-
-        tipo_crudo = match.group(1).strip()
-        numero = re.sub(r"\s+", "", match.group(2)).strip(".- ")
-        tipo_limpio = re.sub(r"[^A-Za-zÁÉÍÓÚÑáéíóúñ]", "", tipo_crudo).upper()
-
-        if not tipo_limpio or tipo_limpio in _ETIQUETAS_DOC_DESCARTAR:
-            continue
-
-        return idx, tipo_limpio, numero
-
-    return -1, "", ""
-
-def _es_linea_nombre_candidata(linea):
-    linea_norm = _normalizar_linea(linea)
-    if len(linea_norm) < 4:
-        return False
-    if any(ch.isdigit() for ch in linea_norm):
-        return False
-
-    solo_letras = re.sub(r"[^A-Za-zÁÉÍÓÚÑáéíóúñ ]", "", linea_norm).upper().strip()
-    if len(solo_letras.replace(" ", "")) < 5:
-        return False
-    if solo_letras in _ETIQUETAS_DOC_DESCARTAR:
-        return False
-    if any(palabra in solo_letras for palabra in _ETIQUETAS_DOC_DESCARTAR if len(palabra) > 3):
-        return False
-
-    return True
 
 def _preprocesar(imagen):
     """Escala y mejora el contraste de la imagen para optimizar el OCR."""
@@ -219,25 +177,14 @@ def _preprocesar(imagen):
 def _ocr_intentos(ocr_reader, imagen_orig):
     """Ejecuta OCR con varias estrategias y devuelve el mejor texto."""
     resultados_texto = []
-    lineas_unicas = []
-    lineas_vistas = set()
-
-    def registrar_lineas(lineas, etiqueta):
-        lineas_norm = [_normalizar_linea(linea) for linea in lineas if _normalizar_linea(linea)]
-        resultados_texto.append("\n".join(lineas_norm))
-        for linea in lineas_norm:
-            clave = linea.lower()
-            if clave not in lineas_vistas:
-                lineas_vistas.add(clave)
-                lineas_unicas.append(linea)
-        print(f"[{etiqueta}]: {len(lineas_norm)} líneas")
 
     # Intento 1: imagen completa mejorada
     try:
         proc = _preprocesar(imagen_orig)
         lineas = ocr_reader.readtext(proc, detail=0, paragraph=False)
         lineas = _filtrar_ui(lineas)
-        registrar_lineas(lineas, "OCR intento 1 - imagen completa")
+        resultados_texto.append("\n".join(lineas))
+        print(f"[OCR intento 1 - imagen completa]: {len(lineas)} líneas")
     except Exception as e:
         print(f"OCR intento 1 error: {e}")
 
@@ -248,52 +195,34 @@ def _ocr_intentos(ocr_reader, imagen_orig):
         proc2 = _preprocesar(mitad_inf)
         lineas2 = ocr_reader.readtext(proc2, detail=0, paragraph=False)
         lineas2 = _filtrar_ui(lineas2)
-        registrar_lineas(lineas2, "OCR intento 2 - mitad inferior")
+        resultados_texto.append("\n".join(lineas2))
+        print(f"[OCR intento 2 - mitad inferior]: {len(lineas2)} líneas")
     except Exception as e:
         print(f"OCR intento 2 error: {e}")
 
     # Devolver el texto más largo (más información extraída)
-    if lineas_unicas:
-        return "\n".join(lineas_unicas)
     if not resultados_texto:
         return ""
     mejor = max(resultados_texto, key=len)
     return mejor
 
-def _extraer_documento_desde_inicio(texto):
-    """Obtiene tipo y número desde el prefijo inicial de la línea del documento."""
-    lineas = [_normalizar_linea(linea) for linea in texto.splitlines() if _normalizar_linea(linea)]
-    _, tipo_limpio, numero = _buscar_documento_en_lineas(lineas)
-    if tipo_limpio:
-        return tipo_limpio, numero
+def _normalizar_linea(linea):
+    return re.sub(r"\s+", " ", str(linea or "")).strip()
 
-    return "", ""
-
-def _extraer_nombre_desde_linea_superior(texto):
-    """Usa la línea inmediatamente superior al documento como candidata principal al nombre."""
-    lineas = [_normalizar_linea(linea) for linea in texto.splitlines() if _normalizar_linea(linea)]
-    idx_doc, _, _ = _buscar_documento_en_lineas(lineas)
-    if idx_doc <= 0:
+def _formatear_edad(valor):
+    numero = re.search(r"\d{1,3}", str(valor or ""))
+    if not numero:
         return ""
-
-    for idx in range(idx_doc - 1, max(-1, idx_doc - 4), -1):
-        linea = lineas[idx]
-        if _es_linea_nombre_candidata(linea):
-            return linea.strip(" :-;,.\"")
-
-    return ""
-
-def _formatear_edad(numero):
-    numero_limpio = re.sub(r"\D", "", str(numero or ""))
-    if not numero_limpio:
-        return ""
-    return f"{int(numero_limpio)} años"
+    return f"{int(numero.group(0))} años"
 
 def _extraer_edad_desde_lineas(texto):
-    """Busca la edad en líneas OCR tolerando variaciones comunes del reconocimiento."""
+    """Extrae edad tolerando variaciones comunes del OCR."""
     lineas = [_normalizar_linea(linea) for linea in texto.splitlines() if _normalizar_linea(linea)]
-    patron_etiqueta = re.compile(r"\b(?:edad|edac|edao|edqd|edao|edod)\b", re.IGNORECASE)
-    patron_valor = re.compile(r"(?:edad|edac|edao|edqd|edod)?\s*[:\-]?\s*(\d{1,3})\s*(?:a(?:ñ|n|fi|f|h)?os?)?", re.IGNORECASE)
+    if not lineas:
+        return ""
+
+    patron_etiqueta = re.compile(r"\b(?:edad|edac|edao|edqd|edod)\b", re.IGNORECASE)
+    patron_numero = re.compile(r"\b(\d{1,3})\b")
     patron_anos = re.compile(r"\b(\d{1,3})\s*(?:a(?:ñ|n|fi|f|h)?os?)\b", re.IGNORECASE)
 
     for idx, linea in enumerate(lineas):
@@ -303,13 +232,13 @@ def _extraer_edad_desde_lineas(texto):
 
         if patron_etiqueta.search(linea):
             for candidato in candidatos:
-                match = patron_valor.search(candidato)
-                if match:
-                    return _formatear_edad(match.group(1))
+                match_anos = patron_anos.search(candidato)
+                if match_anos:
+                    return _formatear_edad(match_anos.group(1))
 
-        match_anos = patron_anos.search(linea)
-        if match_anos and patron_etiqueta.search(linea):
-            return _formatear_edad(match_anos.group(1))
+                match_numero = patron_numero.search(candidato)
+                if match_numero:
+                    return _formatear_edad(match_numero.group(1))
 
     for linea in lineas:
         match_anos = patron_anos.search(linea)
@@ -327,8 +256,7 @@ def extraer_datos(imagen):
 
         datos = {
             "Nombre": "",
-            "Tipo de Documento": "",
-            "Número Documento": "",
+            "RC": "",
             "Edad": "",
             "Fecha Nacimiento": "",
             "ID Atención": "",
@@ -340,26 +268,6 @@ def extraer_datos(imagen):
             "Cama": ""
         }
 
-        nombre_superior = _extraer_nombre_desde_linea_superior(texto)
-        if nombre_superior:
-            datos["Nombre"] = nombre_superior
-            print(f"✓ Nombre (línea superior): {nombre_superior}")
-        else:
-            print("✗ Nombre (línea superior): no encontrado")
-
-        tipo_inicial, numero_inicial = _extraer_documento_desde_inicio(texto)
-        if tipo_inicial:
-            datos["Tipo de Documento"] = tipo_inicial
-            print(f"✓ Tipo de Documento (inicio): {tipo_inicial}")
-        else:
-            print("✗ Tipo de Documento (inicio): no encontrado")
-
-        if numero_inicial:
-            datos["Número Documento"] = numero_inicial
-            print(f"✓ Número Documento (inicio): {numero_inicial}")
-        else:
-            print("✗ Número Documento (inicio): no encontrado")
-
         edad_detectada = _extraer_edad_desde_lineas(texto)
         if edad_detectada:
             datos["Edad"] = edad_detectada
@@ -370,10 +278,10 @@ def extraer_datos(imagen):
         # Patrones flexibles: aceptan variaciones de OCR y tildes opcionales
         patrones = {
             # Nombre: línea con "PRUEBAS SISTEMAS", "Paciente" o "Nombre" seguida del valor
-            "Nombre": r"(?:PRUEBAS\s+SISTEMAS|Paciente|Nombre)\s*[,:'\"*\s]+(.+?)(?=\n|CC|RC|TI|CE|PA|PAS|PPT|NIT|C\.C|$)",
-            "Tipo de Documento": r"\b(CC|RC|TI|CE|PA|PAS|PPT|NIT|C\.C\.?)\b(?=\s*[:\s]*\d)",
-            "Número Documento": r"(?:CC|RC|TI|CE|PA|PAS|PPT|NIT|C\.C\.?)\s*[:\s]*(\d[\d\s\.\-]{4,20})",
-            # Edad: número seguido de "años"
+            "Nombre": r"(?:PRUEBAS\s+SISTEMAS|Paciente|Nombre)\s*[,:'\"*\s]+(.+?)(?=\n|CC|RC|C\.C|$)",
+            # CC (Cédula de Ciudadanía) o RC — el documento usa "CC"
+            "RC":     r"(?:CC|RC|C\.C\.?)\s*[:\s]*(\d[\d\s\.\-]{4,20})",
+            # Edad: flexible con variaciones OCR de etiqueta y formato
             "Edad":   r"(?:Edad|Edac|Edao)\s*[:\-]?\s*(\d{1,3}\s*(?:a(?:ñ|n|fi|f|h)?os?)?)",
             # Fecha de nacimiento: varios formatos dd/mm/yyyy, dd-mm-yyyy
             "Fecha Nacimiento": r"Fecha\s*(?:de\s*)?[Nn]ac(?:imiento)?\s*[:\s]*([\d]{1,2}[/\-\.][\d]{1,2}[/\-\.][\d]{2,4})",
@@ -396,16 +304,15 @@ def extraer_datos(imagen):
         print("=== BUSCANDO PATRONES ===")
         for campo, patron in patrones.items():
             try:
-                if datos.get(campo):
-                    print(f"• {campo}: se conserva valor detectado por prioridad")
+                if campo == "Edad" and datos.get("Edad"):
+                    print("• Edad: se conserva valor detectado por líneas")
                     continue
+
                 m = re.search(patron, texto, re.IGNORECASE | re.DOTALL)
                 if m:
                     valor = m.group(1).strip()
                     # Limpiar artefactos comunes del OCR
                     valor = re.sub(r"\s{2,}", " ", valor)
-                    if campo == "Tipo de Documento":
-                        valor = valor.replace(".", "").upper()
                     datos[campo] = valor
                     print(f"✓ {campo}: {valor}")
                 else:
@@ -422,8 +329,7 @@ def extraer_datos(imagen):
         traceback.print_exc()
         return {
             "Nombre": "",
-            "Tipo de Documento": "",
-            "Número Documento": "",
+            "RC": "",
             "Edad": "",
             "Fecha Nacimiento": "",
             "ID Atención": "",
@@ -446,18 +352,23 @@ def health():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    error = None
+    if session.get("autenticado"):
+        return redirect(url_for("resultados_page"))
+
+    error = ""
     if request.method == "POST":
         usuario = request.form.get("usuario", "").strip()
         contrasena = request.form.get("contrasena", "")
+
         if usuario == ADMIN_USER and _hash_password(contrasena) == ADMIN_PASSWORD_HASH:
             session["autenticado"] = True
-            session.permanent = False
             return redirect(url_for("resultados_page"))
+
         error = "Usuario o contraseña incorrectos"
+
     return render_template("login.html", error=error)
 
-@app.route("/logout")
+@app.route("/logout", methods=["GET"])
 def logout():
     session.clear()
     return redirect(url_for("login"))
@@ -468,7 +379,6 @@ def resultados_page():
     return render_template("resultados.html")
 
 @app.route("/debug", methods=["GET"])
-@login_requerido
 def debug_page():
     return render_template("debug.html")
 
@@ -477,10 +387,10 @@ def guardar_datos():
     global resultados_list
     
     try:
-        datos = _migrar_registro(request.get_json())
+        datos = request.get_json()
         
-        if not datos or (not datos.get("Nombre") and not datos.get("Número Documento")):
-            return jsonify({"error": "Nombre o número de documento es obligatorio"}), 400
+        if not datos or (not datos.get("Nombre") and not datos.get("RC")):
+            return jsonify({"error": "Nombre o RC es obligatorio"}), 400
 
         timestamp_objetivo = str(datos.get("timestamp", "")).strip()
 
@@ -594,8 +504,9 @@ def api_resultados():
         # Asegurar que los datos son serializables
         datos_limpios = []
         for item in resultados_list:
+            item_migrado = _migrar_registro(item)
             item_limpio = {}
-            for key, value in item.items():
+            for key, value in item_migrado.items():
                 item_limpio[key] = str(value) if value else ""
             datos_limpios.append(item_limpio)
         return jsonify(datos_limpios)
@@ -619,14 +530,12 @@ def descargar(idx):
 def descargar_todos():
     if not resultados_list:
         return jsonify({"error": "No hay datos para exportar"}), 404
-    try:
-        df = pd.DataFrame(resultados_list)
-        nombre_excel = f"resultados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        ruta_excel = os.path.join(OUTPUT_FOLDER, nombre_excel)
-        df.to_excel(ruta_excel, index=False)
-        return send_file(ruta_excel, as_attachment=True, download_name=nombre_excel)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+    df = pd.DataFrame(resultados_list)
+    nombre_excel = f"resultados_completos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    ruta_excel = os.path.join(OUTPUT_FOLDER, nombre_excel)
+    df.to_excel(ruta_excel, index=False)
+    return send_file(ruta_excel, as_attachment=True, download_name=nombre_excel)
 
 @app.route("/eliminar/<int:idx>", methods=["DELETE"])
 @login_requerido
@@ -640,7 +549,6 @@ def eliminar(idx):
 
 # Endpoint de debug para inspeccionar OCR
 @app.route("/debug/text", methods=["POST"])
-@login_requerido
 def debug_text():
     """Endpoint para ver qué texto está extrayendo OCR"""
     archivo = request.files.get("imagen")
