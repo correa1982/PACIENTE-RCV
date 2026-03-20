@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PacienteRcv")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e6a493c86dafd36f23758398a30da6db111ffc06")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+be0f1cf0d89b43a5ce4c5b052642740f57fe5fd6")]
 [assembly: System.Reflection.AssemblyProductAttribute("PacienteRcv")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PacienteRcv")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

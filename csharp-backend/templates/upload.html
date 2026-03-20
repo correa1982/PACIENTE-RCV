@@ -641,13 +641,13 @@
     let archivoSeleccionado = null;
     let procesando = false;
     let overlayTimer = null;
-    const CAMPOS_FORMULARIO = ["Nombre", "Tipo De Documento", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento"];
+    const CAMPOS_FORMULARIO = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento"];
 
     function obtenerValorCampo(datos, campo) {
         if (!datos) return "";
 
-        if (campo === "Tipo De Documento") {
-            return String(datos["Tipo De Documento"] ?? datos["Número Documento"] ?? "").trim();
+        if (campo === "RC") {
+            return String(datos["RC"] ?? datos["Número Documento"] ?? "").trim();
         }
 
         return String(datos[campo] ?? "").trim();
@@ -808,8 +808,8 @@
 
     async function guardarManual() {
         const datos = leerDatosFormulario();
-        if (!datos["Nombre"] && !datos["Tipo De Documento"]) {
-            mostrarMensaje("❌ Completa al menos Nombre o Tipo De Documento antes de guardar", "error");
+        if (!datos["Nombre"] && !datos["RC"]) {
+            mostrarMensaje("❌ Completa al menos Nombre o RC antes de guardar", "error");
             return;
         }
         try {

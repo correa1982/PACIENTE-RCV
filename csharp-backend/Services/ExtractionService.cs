@@ -18,8 +18,13 @@ public sealed class ExtractionService
     private static readonly Regex DiagnosticoInlineRegex = new(@"\b(?:" + DiagnosticoLabelPattern + @")\b\s*[:\-]?\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex DiagnosticoPrefixRegex = new(@"^.*?\b(?:" + DiagnosticoLabelPattern + @")\b\s*[:\-]?\s*", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private static readonly Regex DiagnosticoLabelResidueRegex = new(@"^(?:n[oó0]s?t(?:i|1|l)?co|diag|dx)\b\s*[:\-]?\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NameSanitizeRegex = new(@"[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s,\.'\-]", RegexOptions.Compiled);
     private static readonly Regex LettersRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]", RegexOptions.Compiled);
     private static readonly Regex WordBlocksRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{2,}", RegexOptions.Compiled);
+    private static readonly HashSet<string> NameConnectorWords = new(StringComparer.Ordinal)
+    {
+        "de", "del", "la", "las", "los", "da", "das", "do", "dos", "y", "e"
+    };
 
     // FIX Bug 4: regexes de patrones y contexto de documento como campos estáticos,
     // para no compilarlos en cada llamada a ExtractData / ExtractNameByDocumentContext.
@@ -27,7 +32,7 @@ public sealed class ExtractionService
 
     private static readonly Dictionary<string, Regex> Patrones = new(StringComparer.Ordinal)
     {
-        ["Nombre"] = new Regex(@"(?:PRUEBAS\s+SISTEMAS|Paciente|Nombre)\s*[,:'""*\s]+(.+?)(?=\n|CC|RC|C\.C|$)", DefaultOptions | RegexOptions.Singleline),
+        ["Nombre"] = new Regex(@"(?:Paciente|Nombre)\s*[:\-]?\s*(.+?)(?=\n|CC|RC|C\.C|Edad|Fecha|ID|Especialidad|Sexo|Diagn[oó]stico|Aseguradora|Procedimiento|$)", DefaultOptions | RegexOptions.Singleline),
         ["RC"] = new Regex(@"(?:CC|RC|C\.C\.?)\s*[:\s]*(\d[\d\s\.\-]{4,20})", DefaultOptions),
         ["Edad"] = new Regex(@"(?:Edad|Edac|Edao)\s*[:\-]?\s*(\d{1,3}\s*(?:a(?:ñ|n|fi|f|h)?os?)?)", DefaultOptions),
         ["Fecha Nacimiento"] = new Regex(@"Fecha\s*(?:de\s*)?[Nn]ac(?:imiento)?\s*[:\s]*([\d]{1,2}[/\-\.][\d]{1,2}[/\-\.][\d]{2,4})", DefaultOptions),
@@ -451,6 +456,8 @@ public sealed class ExtractionService
             return string.Empty;
         }
 
+        var nameCandidates = new List<string>();
+
         for (var idx = 0; idx < lines.Count; idx++)
         {
             var line = lines[idx];
@@ -462,38 +469,41 @@ public sealed class ExtractionService
             var sameLine = Regex.Match(line, @"(?:nombre|paciente)\s*[:\-]?\s*(.+)$", RegexOptions.IgnoreCase);
             if (sameLine.Success)
             {
-                var nombre = CleanName(sameLine.Groups[1].Value);
-                if (IsValidName(nombre))
+                var split = NameCutRegex.Split(sameLine.Groups[1].Value, 2);
+                var nombre = CleanName(split.FirstOrDefault() ?? string.Empty);
+                if (!string.IsNullOrWhiteSpace(nombre))
                 {
-                    return nombre;
+                    nameCandidates.Add(nombre);
                 }
             }
 
             if (idx + 1 < lines.Count)
             {
                 var nextLine = CleanName(lines[idx + 1]);
-                if (IsValidName(nextLine))
+                if (!string.IsNullOrWhiteSpace(nextLine))
                 {
-                    return nextLine;
+                    nameCandidates.Add(nextLine);
                 }
             }
         }
 
-        var indexDoc = lines.FindIndex(line => DocumentTagRegex.IsMatch(line));
-        var candidates = indexDoc >= 0
+        var indexDoc = lines.FindIndex(line =>
+            DocumentTagRegex.IsMatch(line) ||
+            NormalizeForOcrComparison(line).Contains("documento", StringComparison.Ordinal));
+        var contextCandidates = indexDoc >= 0
             ? lines.Take(indexDoc).ToList()
             : lines.Where(line => !IsFieldLine(line)).ToList();
 
-        foreach (var candidate in candidates)
+        foreach (var candidate in contextCandidates)
         {
             var nombre = CleanName(candidate);
-            if (IsValidName(nombre))
+            if (!string.IsNullOrWhiteSpace(nombre))
             {
-                return nombre;
+                nameCandidates.Add(nombre);
             }
         }
 
-        return string.Empty;
+        return SelectBestNameCandidate(nameCandidates);
     }
 
     private static string ExtractNameByDocumentContext(string text)
@@ -555,6 +565,42 @@ public sealed class ExtractionService
             return false;
         }
 
+        var tokens = GetNameTokens(nombre);
+        if (tokens.Count == 0)
+        {
+            return false;
+        }
+
+        if (tokens.Any(token => token.Length == 1 && !IsNameConnectorToken(token)))
+        {
+            return false;
+        }
+
+        var coreTokens = tokens.Where(token => !IsNameConnectorToken(token)).ToList();
+        var longCoreTokens = coreTokens.Count(token => token.Length >= 3);
+        var coreLength = coreTokens.Sum(token => token.Length);
+
+        if (coreTokens.Count < 2)
+        {
+            if (!(allowSingleBlock && coreTokens.Count == 1 && coreLength >= 10))
+            {
+                return false;
+            }
+        }
+
+        if (longCoreTokens < 2)
+        {
+            if (!(allowSingleBlock && coreLength >= 10))
+            {
+                return false;
+            }
+        }
+
+        if (coreLength < 6)
+        {
+            return false;
+        }
+
         var blocks = WordBlocksRegex.Matches(nombre).Select(m => m.Value).ToList();
         if (blocks.Count < 2)
         {
@@ -565,6 +611,66 @@ public sealed class ExtractionService
         }
 
         return true;
+    }
+
+    private static string SelectBestNameCandidate(IEnumerable<string> rawCandidates)
+    {
+        var bestCandidate = string.Empty;
+        var bestScore = int.MinValue;
+
+        foreach (var rawCandidate in rawCandidates)
+        {
+            var candidate = CleanName(rawCandidate);
+            if (!IsValidName(candidate))
+            {
+                continue;
+            }
+
+            var score = ScoreNameCandidate(candidate);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestCandidate = candidate;
+            }
+        }
+
+        return bestCandidate;
+    }
+
+    private static int ScoreNameCandidate(string candidate)
+    {
+        var tokens = GetNameTokens(candidate);
+        var coreTokens = tokens.Where(token => !IsNameConnectorToken(token)).ToList();
+
+        var score = coreTokens.Count * 20;
+        score += coreTokens.Sum(token => Math.Min(token.Length, 12));
+
+        if (tokens.Count >= 3)
+        {
+            score += 8;
+        }
+
+        if (candidate.Contains(',', StringComparison.Ordinal))
+        {
+            score += 2;
+        }
+
+        return score;
+    }
+
+    private static List<string> GetNameTokens(string value)
+    {
+        return value
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(token => token.Trim(" ,.'\"-".ToCharArray()))
+            .Where(token => token.Length > 0)
+            .ToList();
+    }
+
+    private static bool IsNameConnectorToken(string token)
+    {
+        var normalized = NormalizeForOcrComparison(token);
+        return NameConnectorWords.Contains(normalized);
     }
 
     private static bool IsFieldLine(string line)
@@ -714,6 +820,7 @@ public sealed class ExtractionService
     private static string CleanName(string value)
     {
         var normalized = NormalizeLine(value);
+        normalized = NameSanitizeRegex.Replace(normalized, " ");
         normalized = normalized.Trim(" -,:;|\"'".ToCharArray());
         return WhitespaceRegex.Replace(normalized, " ").Trim();
     }

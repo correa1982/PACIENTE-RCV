@@ -1,6 +1,6 @@
 ﻿[
   {
-    "Nombre": "MO] A ia",
+    "Nombre": "PRUEBAS PRUEBAS, PRUEBAS PRUEBAS CAPACITACIÓN",
     "RC": "0123456789",
     "Edad": "65 años",
     "Fecha Nacimiento": "15/07/1960",
@@ -8,25 +8,10 @@
     "Especialidad": "Alergologia",
     "Sexo Biológico": "Mujer",
     "Diagnóstico": "C430 - MELANOMA MALIGNO DEL LABIO",
-    "Aseguradora": "3788-ALIANZA MEDELLIN ANTIOGUIA -SUBSIDIADO 2024",
-    "Procedimiento": "ANASTOMOSIS DE INTESTINO GRUESO A INTESTINO GRUESO VIA ABIERTA",
-    "Tipo de Documento": "CC",
-    "Número Documento": "0123456789",
-    "timestamp": "2026-03-19 21:33:27"
-  },
-  {
-    "Nombre": "PRUEBAS PRUEBAS, PRUEBAS PRUEBAS \"CAPACITACION",
-    "RC": "0123456789",
-    "Edad": "65 años",
-    "Fecha Nacimiento": "15/07/1960",
-    "ID Atención": "7348776",
-    "Especialidad": "Alergología",
-    "Sexo Biológico": "Mujer",
-    "Diagnóstico": "nóstico C430 - MELANOMA MALIGNO DEL LABIO",
     "Aseguradora": "3788-ALIANZA MEDELLIN ANTIOQUIA -SUBSIDIADO 2024",
     "Procedimiento": "ANASTOMOSIS DE INTESTINO GRUESO A INTESTINO GRUESO VIA ABIERTA",
     "Tipo de Documento": "CC",
     "Número Documento": "0123456789",
-    "timestamp": "2026-03-19 21:27:54"
+    "timestamp": "2026-03-19 22:08:43"
   }
 ]

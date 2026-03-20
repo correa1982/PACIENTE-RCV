@@ -41,3 +41,4 @@ C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\obj\Release\ne
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\obj\Release\net8.0\PacienteRcv.genruntimeconfig.cache
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\obj\Release\net8.0\ref\PacienteRcv.dll
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Release\net8.0\resultados.json
+C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Release\net8.0\PacienteRcv.exe

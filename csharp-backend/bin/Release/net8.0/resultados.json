@@ -1,18 +1,17 @@
 ﻿[
   {
-    "Nombre": "PRUEBAS SISTEMAS, MANUALES “LUZ",
-    "RC": "12345671",
-    "Edad": "5 años",
-    "Fecha Nacimiento": "13/07/2020",
-    "ID Atención": "5704909",
-    "Especialidad": "Medicina General",
+    "Nombre": "sE EEO",
+    "RC": "0123456789",
+    "Edad": "65 años",
+    "Fecha Nacimiento": "15/07/1965",
+    "ID Atención": "7348776",
+    "Especialidad": "Alergologia",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "nóstico R51X - CEFALEA",
-    "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
-    "Procedimiento": "LAVADO Y DESBRIDAMIENTO DE FRACTURA EXPUESTA DE ROTULA",
-    "Cama": "SIS404",
-    "Tipo de Documento": "RC",
-    "Número Documento": "12345671",
-    "timestamp": "2026-03-19 20:30:11"
+    "Diagnóstico": "C430 - MELANOMA MALIGNO DEL LABIO",
+    "Aseguradora": "3788-ALIANZA MEDELLIN ANTIOQUIA -SUBSIDIADO 2024",
+    "Procedimiento": "ANASTOMOSIS DE INTESTINO GRUESO A INTESTINO GRUESO VIA ABIERTA",
+    "Tipo de Documento": "CC",
+    "Número Documento": "0123456789",
+    "timestamp": "2026-03-19 21:38:14"
   }
 ]
