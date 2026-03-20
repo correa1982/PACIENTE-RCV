@@ -20,14 +20,14 @@ public sealed class AppState
     {
         "Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención",
         "Especialidad", "Sexo Biológico", "Diagnóstico",
-        "Aseguradora", "Procedimiento", "Cama"
+        "Aseguradora", "Procedimiento"
     };
 
     private static readonly string[] StorageFields =
     {
         "Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención",
         "Especialidad", "Sexo Biológico", "Diagnóstico",
-        "Aseguradora", "Procedimiento", "Cama",
+        "Aseguradora", "Procedimiento",
         "Tipo de Documento", "Número Documento", "timestamp"
     };
 

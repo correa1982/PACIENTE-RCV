@@ -1,18 +1,18 @@
 ﻿[
   {
-    "Nombre": "SISTEMAS SISTEMAS, CORAZON SISTEMAS \"CORAZON",
-    "RC": "1234567890",
-    "Edad": "43 años",
-    "Fecha Nacimiento": "20/02/1983",
-    "ID Atención": "7013569",
-    "Especialidad": "Alergologia",
+    "Nombre": "PRUEBAS SISTEMAS, MANUALES “LUZ",
+    "RC": "12345671",
+    "Edad": "5 años",
+    "Fecha Nacimiento": "13/07/2020",
+    "ID Atención": "5704909",
+    "Especialidad": "Medicina General",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "",
-    "Aseguradora": "3755-NUEVA EPS (CONTRIBUTIVO) SEDE HOSPITALARIA 2024",
-    "Procedimiento": "",
-    "Cama": "SIS409",
-    "Tipo de Documento": "CC",
-    "Número Documento": "1234567890",
-    "timestamp": "2026-03-19 20:10:02"
+    "Diagnóstico": "nóstico R51X - CEFALEA",
+    "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
+    "Procedimiento": "LAVADO Y DESBRIDAMIENTO DE FRACTURA EXPUESTA DE ROTULA",
+    "Cama": "SIS404",
+    "Tipo de Documento": "RC",
+    "Número Documento": "12345671",
+    "timestamp": "2026-03-19 20:30:11"
   }
 ]

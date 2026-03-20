@@ -47,7 +47,7 @@ public sealed class RecordsController : ControllerBase
         {
             "Tipo de Documento", "Número Documento", "Nombre", "ID Atención",
             "Fecha Nacimiento", "Sexo Biológico", "Edad", "Diagnóstico",
-            "Especialidad", "Aseguradora", "Procedimiento", "Cama", "timestamp"
+            "Especialidad", "Aseguradora", "Procedimiento", "timestamp"
         };
 
         var ts = GetOrEmpty(datos, "timestamp");
@@ -79,7 +79,7 @@ public sealed class RecordsController : ControllerBase
         {
             "Tipo de Documento", "Número Documento", "Nombre", "ID Atención",
             "Fecha Nacimiento", "Sexo Biológico", "Edad", "Diagnóstico",
-            "Especialidad", "Aseguradora", "Procedimiento", "Cama", "timestamp"
+            "Especialidad", "Aseguradora", "Procedimiento", "timestamp"
         };
 
         var nombreExcel = $"resultados_completos_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";

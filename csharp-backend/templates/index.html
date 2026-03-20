@@ -106,7 +106,6 @@
                 <p><strong>Diagnóstico:</strong> <span id="resDiag">-</span></p>
                 <p><strong>Aseguradora:</strong> <span id="resAseg">-</span></p>
                 <p><strong>Procedimiento:</strong> <span id="resProc">-</span></p>
-                <p><strong>Cama:</strong> <span id="resCama">-</span></p>
             </div>
             <button onclick="descargarExcel()" style="background: #28a745; width: 100%; margin-top: 20px;">📥 Descargar Excel</button>
         </div>
@@ -199,7 +198,6 @@
         document.getElementById("resDiag").textContent = datos.Diagnóstico || "-";
         document.getElementById("resAseg").textContent = datos.Aseguradora || "-";
         document.getElementById("resProc").textContent = datos.Procedimiento || "-";
-        document.getElementById("resCama").textContent = datos.Cama || "-";
     }
 
     async function descargarExcel() {

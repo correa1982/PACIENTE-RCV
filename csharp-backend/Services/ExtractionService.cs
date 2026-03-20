@@ -33,7 +33,6 @@ public sealed class ExtractionService
         ["Diagnóstico"] = new Regex(@"[Dd]iagn[oó]s?tico\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|[Pp]rocedimiento|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
         ["Aseguradora"] = new Regex(@"[Aa]seguradora\s*[:\s]*(.+?)(?=\n|[Pp]rocedimiento|$)", DefaultOptions | RegexOptions.Singleline),
         ["Procedimiento"] = new Regex(@"[Pp]rocedimiento\s*[:\s]*(.+?)(?=\n|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
-        ["Cama"] = new Regex(@"[Cc]ama\s*[:\s]*([\w\d]{2,12})", DefaultOptions),
     };
 
     // FIX Bug 4: también estáticos para ExtractNameByDocumentContext y CleanDiagnosticoValue.
@@ -81,7 +80,6 @@ public sealed class ExtractionService
             ["Diagnóstico"] = string.Empty,
             ["Aseguradora"] = string.Empty,
             ["Procedimiento"] = string.Empty,
-            ["Cama"] = string.Empty,
         };
 
         var edadDetectada = ExtractAgeFromLines(text);
