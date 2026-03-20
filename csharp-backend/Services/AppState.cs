@@ -23,6 +23,14 @@ public sealed class AppState
         "Aseguradora", "Procedimiento", "Cama"
     };
 
+    private static readonly string[] StorageFields =
+    {
+        "Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención",
+        "Especialidad", "Sexo Biológico", "Diagnóstico",
+        "Aseguradora", "Procedimiento", "Cama",
+        "Tipo de Documento", "Número Documento", "timestamp"
+    };
+
     private readonly object _sync = new();
     private readonly string _resultadosFile;
     private List<Dictionary<string, string>> _resultados = new();
@@ -82,7 +90,7 @@ public sealed class AppState
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            _resultados[index] = Clone(data);
+            _resultados[index] = NormalizeRecordForStorage(data);
             SaveLocked();
         }
     }
@@ -91,7 +99,7 @@ public sealed class AppState
     {
         lock (_sync)
         {
-            _resultados.Insert(0, Clone(data));
+            _resultados.Insert(0, NormalizeRecordForStorage(data));
             SaveLocked();
         }
     }
@@ -120,11 +128,13 @@ public sealed class AppState
                 return false;
             }
 
-            var item = _resultados[index];
+            var item = Clone(_resultados[index]);
             foreach (var kv in changes)
             {
                 item[kv.Key] = kv.Value ?? string.Empty;
             }
+
+            _resultados[index] = NormalizeRecordForStorage(item);
 
             SaveLocked();
             return true;
@@ -196,9 +206,45 @@ public sealed class AppState
         }
     }
 
-    public static Dictionary<string, string> MigrateRecord(Dictionary<string, string> registro)
+    public static Dictionary<string, string> NormalizeRecordForStorage(Dictionary<string, string> registro)
     {
         var item = Clone(registro);
+
+        var rcValor = GetOrEmpty(item, "RC").Trim();
+        var numeroDocumento = GetOrEmpty(item, "Número Documento").Trim();
+        var tipoDocumento = GetOrEmpty(item, "Tipo de Documento").Trim();
+
+        if (string.IsNullOrWhiteSpace(rcValor) && !string.IsNullOrWhiteSpace(numeroDocumento))
+        {
+            rcValor = numeroDocumento;
+        }
+
+        if (string.IsNullOrWhiteSpace(numeroDocumento) && !string.IsNullOrWhiteSpace(rcValor))
+        {
+            numeroDocumento = rcValor;
+        }
+
+        if (string.IsNullOrWhiteSpace(tipoDocumento) && !string.IsNullOrWhiteSpace(numeroDocumento))
+        {
+            tipoDocumento = "RC";
+        }
+
+        item["RC"] = rcValor;
+        item["Número Documento"] = numeroDocumento;
+        item["Tipo de Documento"] = tipoDocumento;
+
+        var normalized = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var campo in StorageFields)
+        {
+            normalized[campo] = GetOrEmpty(item, campo);
+        }
+
+        return normalized;
+    }
+
+    public static Dictionary<string, string> MigrateRecord(Dictionary<string, string> registro)
+    {
+        var item = NormalizeRecordForStorage(registro);
         var rcValor = GetOrEmpty(item, "RC").Trim();
 
         if (!string.IsNullOrWhiteSpace(rcValor) && string.IsNullOrWhiteSpace(GetOrEmpty(item, "Número Documento")))
@@ -243,6 +289,7 @@ public sealed class AppState
             }
 
             var cargados = new List<Dictionary<string, string>>();
+            var normalizedChanged = false;
             foreach (var element in document.RootElement.EnumerateArray())
             {
                 if (element.ValueKind != JsonValueKind.Object)
@@ -256,10 +303,20 @@ public sealed class AppState
                     dict[prop.Name] = JsonElementToString(prop.Value);
                 }
 
-                cargados.Add(MigrateRecord(dict));
+                var normalized = NormalizeRecordForStorage(dict);
+                if (!DictionaryEquals(dict, normalized))
+                {
+                    normalizedChanged = true;
+                }
+
+                cargados.Add(normalized);
             }
 
             _resultados = cargados;
+            if (normalizedChanged)
+            {
+                SaveLocked();
+            }
         }
         catch
         {
@@ -306,5 +363,28 @@ public sealed class AppState
     private static Dictionary<string, string> Clone(Dictionary<string, string> data)
     {
         return new Dictionary<string, string>(data, StringComparer.Ordinal);
+    }
+
+    private static bool DictionaryEquals(Dictionary<string, string> left, Dictionary<string, string> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        foreach (var kv in left)
+        {
+            if (!right.TryGetValue(kv.Key, out var value))
+            {
+                return false;
+            }
+
+            if (!string.Equals(kv.Value ?? string.Empty, value ?? string.Empty, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

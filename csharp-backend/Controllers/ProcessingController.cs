@@ -33,8 +33,14 @@ public sealed class ProcessingController : ControllerBase
     {
         try
         {
-            var datos = await RequestJsonReader.ReadDictionaryAsync(Request);
-            if (datos.Count == 0 || (IsNullOrWhite(datos, "Nombre") && IsNullOrWhite(datos, "RC")))
+            var datosEntrada = await RequestJsonReader.ReadDictionaryAsync(Request);
+            if (datosEntrada.Count == 0)
+            {
+                return StatusCode(400, new { error = "Nombre o RC es obligatorio" });
+            }
+
+            var datos = AppState.NormalizeRecordForStorage(datosEntrada);
+            if (IsNullOrWhite(datos, "Nombre") && IsNullOrWhite(datos, "RC"))
             {
                 return StatusCode(400, new { error = "Nombre o RC es obligatorio" });
             }
@@ -55,19 +61,20 @@ public sealed class ProcessingController : ControllerBase
 
                 registroActual["timestamp"] = timestampObjetivo;
                 _state.SetAt(idx, registroActual);
+                var registroGuardado = _state.GetAt(idx) ?? registroActual;
 
-                _logger.LogInformation("Datos actualizados: {Nombre}", GetOrEmpty(registroActual, "Nombre"));
+                _logger.LogInformation("Datos actualizados: {Nombre}", GetOrEmpty(registroGuardado, "Nombre"));
 
                 try
                 {
-                    _excel.ExportSingle(registroActual);
+                    _excel.ExportSingle(registroGuardado);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Error guardando Excel individual");
                 }
 
-                var payload = ToObjectDictionary(registroActual);
+                var payload = ToObjectDictionary(registroGuardado);
                 payload["updated"] = true;
                 return Ok(payload);
             }
@@ -83,19 +90,20 @@ public sealed class ProcessingController : ControllerBase
 
             datos["timestamp"] = NowTimestamp();
             _state.InsertFirst(datos);
+            var registroGuardadoNuevo = _state.GetAt(0) ?? datos;
 
-            _logger.LogInformation("Datos guardados manualmente: {Nombre}", GetOrEmpty(datos, "Nombre"));
+            _logger.LogInformation("Datos guardados manualmente: {Nombre}", GetOrEmpty(registroGuardadoNuevo, "Nombre"));
 
             try
             {
-                _excel.ExportSingle(datos);
+                _excel.ExportSingle(registroGuardadoNuevo);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error guardando Excel individual");
             }
 
-            return StatusCode(201, datos);
+            return StatusCode(201, registroGuardadoNuevo);
         }
         catch (Exception ex)
         {
@@ -141,7 +149,8 @@ public sealed class ProcessingController : ControllerBase
             }
 
             var texto = string.Join("\n", ocrResult.Lines);
-            var datos = _extraction.ExtractData(texto);
+            var datosExtraidos = _extraction.ExtractData(texto);
+            var datos = AppState.NormalizeRecordForStorage(datosExtraidos);
 
             if (_state.IsRecentDuplicate(datos))
             {
@@ -154,17 +163,18 @@ public sealed class ProcessingController : ControllerBase
 
             datos["timestamp"] = NowTimestamp();
             _state.InsertFirst(datos);
+            var registroGuardado = _state.GetAt(0) ?? datos;
 
             try
             {
-                _excel.ExportSingle(datos);
+                _excel.ExportSingle(registroGuardado);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error guardando Excel individual");
             }
 
-            return StatusCode(201, datos);
+            return StatusCode(201, registroGuardado);
         }
         catch (Exception ex)
         {

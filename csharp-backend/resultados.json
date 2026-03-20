@@ -1,33 +1,34 @@
 ﻿[
   {
-    "Nombre": "Menú Médico - Historia Clínica",
+    "Nombre": "PRUEBAS SISTEMAS, MANUALES \"LUZ ?",
     "RC": "1234567",
     "Edad": "5 años",
     "Fecha Nacimiento": "13/07/2020",
     "ID Atención": "5704909",
     "Especialidad": "Medicina General",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "R5IX - CEFALEA",
+    "Diagnóstico": "nóstico R51X - CEFALEA",
     "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
-    "Procedimiento": "LAVADO PERITONEAL TERAPEUTICO VIA ABIERTA",
-    "Cama": "SIS404",
+    "Procedimiento": "LAVADO Y DESBRIDAMIENTO DE FRACTURA EXPUESTA DE ROTULA",
+    "Cama": "",
+    "Tipo de Documento": "RC",
     "Número Documento": "1234567",
-    "Tipo de Documento": "CC",
-    "timestamp": "2026-03-19 19:39:27"
+    "timestamp": "2026-03-19 20:17:38"
   },
   {
-    "Nombre": "Informa: CENO A",
-    "Edad": "5 años",
-    "Fecha Nacimiento": "13/07/2020",
-    "ID Atención": "5704909",
-    "Especialidad": "Medicina General",
+    "Nombre": "SISTEMAS SISTEMAS, CORAZON SISTEMAS \"CORAZON",
+    "RC": "1234567890",
+    "Edad": "43 años",
+    "Fecha Nacimiento": "20/02/1983",
+    "ID Atención": "7013569",
+    "Especialidad": "Alergologia",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "nóstico R5IX - CEFALEA",
-    "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
-    "Procedimiento": "LAVADO PERITONEAL TERAPEUTICO VIA ABIERTA",
-    "Cama": "sis404",
-    "Número Documento": "1234567",
+    "Diagnóstico": "",
+    "Aseguradora": "3755-NUEVA EPS (CONTRIBUTIVO) SEDE HOSPITALARIA 2024",
+    "Procedimiento": "",
+    "Cama": "SIS409",
     "Tipo de Documento": "CC",
-    "timestamp": "2026-03-19 19:33:33"
+    "Número Documento": "1234567890",
+    "timestamp": "2026-03-19 20:16:54"
   }
 ]

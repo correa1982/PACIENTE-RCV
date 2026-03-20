@@ -10,7 +10,6 @@ C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\x86\tesseract50.dll
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\x64\leptonica-1.82.0.dll
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\x64\tesseract50.dll
-C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\PacienteRcv.exe
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\PacienteRcv.deps.json
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\PacienteRcv.runtimeconfig.json
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\PacienteRcv.dll
@@ -42,3 +41,4 @@ C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\obj\Debug\net8
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\obj\Debug\net8.0\PacienteRcv.pdb
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\obj\Debug\net8.0\PacienteRcv.genruntimeconfig.cache
 C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\obj\Debug\net8.0\ref\PacienteRcv.dll
+C:\Users\Danni Mejia\Documents\GitHub\PACIENTE-RCV\csharp-backend\bin\Debug\net8.0\PacienteRcv.exe

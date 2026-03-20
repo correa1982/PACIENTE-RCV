@@ -356,6 +356,17 @@
     let archivoSeleccionado = null;
     let procesando = false;
     let overlayTimer = null;
+    const CAMPOS_FORMULARIO = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
+
+    function obtenerValorCampo(datos, campo) {
+        if (!datos) return "";
+
+        if (campo === "RC") {
+            return String(datos["RC"] ?? datos["Número Documento"] ?? "").trim();
+        }
+
+        return String(datos[campo] ?? "").trim();
+    }
 
     // Verificar si OCR está listo
     async function checkOCRStatus() {
@@ -467,11 +478,11 @@
                 ultimosDatos = datos;
                 mostrarResultados(datos);
                 const nombrePaciente = (datos["Nombre"] || "").trim();
-                const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
-                const camposDetectados = campos.filter(campo => String(datos[campo] || "").trim()).length;
+                const camposConContenido = CAMPOS_FORMULARIO.filter(campo => obtenerValorCampo(datos, campo)).length;
+                const totalCampos = CAMPOS_FORMULARIO.length;
                 const textoExito = nombrePaciente
-                    ? `Paciente ${nombrePaciente} ingresado al programa de riesgo cardiovascular. Campos detectados: ${camposDetectados}.`
-                    : `Documento procesado correctamente. Campos detectados: ${camposDetectados}.`;
+                    ? `Paciente ${nombrePaciente} ingresado al programa de riesgo cardiovascular. Se cargaron ${totalCampos} campos (${camposConContenido} con información detectada).`
+                    : `Documento procesado correctamente. Se cargaron ${totalCampos} campos (${camposConContenido} con información detectada).`;
                 mostrarMensaje(textoExito, "success-final");
                 setTimeout(() => limpiarMensaje(), 6000);
             } else {
@@ -488,10 +499,9 @@
     }
 
     function mostrarResultados(datos) {
-        const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
         let html = "";
-        campos.forEach(campo => {
-            const valor = datos[campo] || "";
+        CAMPOS_FORMULARIO.forEach(campo => {
+            const valor = obtenerValorCampo(datos, campo);
             const id = "campo_" + campo.replace(/\s+/g, "_");
             html += `<div class="result-item"><strong>${campo}:</strong> <input id="${id}" value="${valor}" placeholder="-"></div>`;
         });
@@ -500,9 +510,8 @@
     }
 
     function leerDatosFormulario() {
-        const campos = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento", "Cama"];
         const datos = {};
-        campos.forEach(campo => {
+        CAMPOS_FORMULARIO.forEach(campo => {
             const id = "campo_" + campo.replace(/\s+/g, "_");
             const el = document.getElementById(id);
             datos[campo] = el ? el.value.trim() : "";
