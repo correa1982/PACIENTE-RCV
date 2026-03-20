@@ -1,18 +1,32 @@
 ﻿[
   {
-    "Nombre": "SISTEMAS SISTEMAS, CORAZON SISTEMAS \"CORAZON",
-    "RC": "1234567890",
-    "Edad": "43 años",
-    "Fecha Nacimiento": "20/02/1983",
-    "ID Atención": "7013569",
+    "Nombre": "MO] A ia",
+    "RC": "0123456789",
+    "Edad": "65 años",
+    "Fecha Nacimiento": "15/07/1960",
+    "ID Atención": "7348776",
     "Especialidad": "Alergologia",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "nóstico ZOOO - EXAMEN MEDICO GENERAL",
-    "Aseguradora": "3755-NUEVA EPS (CONTRIBUTIVO) SEDE HOSPITALARIA 2024",
-    "Procedimiento": "",
-    "Cama": "SIS409",
+    "Diagnóstico": "C430 - MELANOMA MALIGNO DEL LABIO",
+    "Aseguradora": "3788-ALIANZA MEDELLIN ANTIOGUIA -SUBSIDIADO 2024",
+    "Procedimiento": "ANASTOMOSIS DE INTESTINO GRUESO A INTESTINO GRUESO VIA ABIERTA",
     "Tipo de Documento": "CC",
-    "Número Documento": "1234567890",
-    "timestamp": "2026-03-19 20:31:25"
+    "Número Documento": "0123456789",
+    "timestamp": "2026-03-19 21:33:27"
+  },
+  {
+    "Nombre": "PRUEBAS PRUEBAS, PRUEBAS PRUEBAS \"CAPACITACION",
+    "RC": "0123456789",
+    "Edad": "65 años",
+    "Fecha Nacimiento": "15/07/1960",
+    "ID Atención": "7348776",
+    "Especialidad": "Alergología",
+    "Sexo Biológico": "Mujer",
+    "Diagnóstico": "nóstico C430 - MELANOMA MALIGNO DEL LABIO",
+    "Aseguradora": "3788-ALIANZA MEDELLIN ANTIOQUIA -SUBSIDIADO 2024",
+    "Procedimiento": "ANASTOMOSIS DE INTESTINO GRUESO A INTESTINO GRUESO VIA ABIERTA",
+    "Tipo de Documento": "CC",
+    "Número Documento": "0123456789",
+    "timestamp": "2026-03-19 21:27:54"
   }
 ]

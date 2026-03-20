@@ -2,76 +2,340 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OCR Pacientes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial; background: #f4f6f9; padding: 20px; }
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,.1);
+        :root {
+            --bg-1: #effaf8;
+            --bg-2: #e9f2ff;
+            --surface: #ffffff;
+            --surface-soft: #f8fbff;
+            --ink: #123147;
+            --ink-soft: #426177;
+            --primary: #0f766e;
+            --primary-strong: #0a5e58;
+            --accent: #e76f00;
+            --accent-soft: #fff3e7;
+            --success: #12824c;
+            --danger: #b4233e;
+            --line: #d6e3ee;
+            --shadow: 0 20px 44px rgba(11, 53, 86, 0.16);
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
         }
-        h1 { text-align: center; color: #333; margin-bottom: 10px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
-        .content-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        h2 { font-size: 16px; color: #333; margin-bottom: 15px; }
-        .upload-area {
-            border: 3px dashed #0b5ed7;
-            border-radius: 8px;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Manrope", "Segoe UI", sans-serif;
+            color: var(--ink);
+            min-height: 100vh;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 10% 8%, #d6f3ed 0, #d6f3ed 18%, transparent 40%),
+                radial-gradient(circle at 92% 92%, #dce8ff 0, #dce8ff 20%, transparent 40%),
+                linear-gradient(140deg, var(--bg-1), var(--bg-2));
+        }
+
+        .page-shell {
+            width: min(1180px, 100%);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: var(--radius-xl);
+            backdrop-filter: blur(8px);
+            box-shadow: var(--shadow);
             padding: 30px;
+            animation: rise-in .45s ease-out;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 26px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfffa;
+            color: var(--primary-strong);
+            border: 1px solid #b5ede2;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-family: "Fraunces", "Georgia", serif;
+            font-size: clamp(30px, 4.6vw, 44px);
+            line-height: 1.1;
+            margin-top: 12px;
+            color: #0f3141;
+        }
+
+        .hero p {
+            margin-top: 10px;
+            color: var(--ink-soft);
+            font-size: 15px;
+        }
+
+        .loading-init {
+            text-align: center;
+            padding: 92px 18px;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--line);
+        }
+
+        .loading-title {
+            margin-top: 20px;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .loading-copy {
+            margin-top: 8px;
+            color: var(--ink-soft);
+            font-size: 13px;
+        }
+
+        .main-content {
+            animation: rise-in .35s ease-out;
+        }
+
+        .content-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 22px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            min-height: 480px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-bottom: 14px;
+            color: #174059;
+            letter-spacing: .2px;
+        }
+
+        .upload-area {
+            border: 2px dashed #3a9f93;
+            border-radius: var(--radius-md);
+            background: linear-gradient(160deg, #f3fffc, #edf8ff);
+            min-height: 260px;
+            padding: 24px;
             text-align: center;
             cursor: pointer;
-            background: #f9f9f9;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .upload-area:hover { background: #f0f7ff; }
-        .upload-area .icon { font-size: 40px; margin-bottom: 10px; }
-        #preview { max-width: 100%; max-height: 250px; border-radius: 8px; display: none; margin-top: 15px; }
-        input[type="file"] { display: none; }
-        .result-item { padding: 8px 0; border-bottom: 1px solid #eee; }
-        .result-item strong { color: #0b5ed7; display: inline-block; width: 140px; font-size: 13px; }
-        .result-item span { font-size: 13px; color: #333; }
-        .empty-results { text-align: center; padding: 50px 20px; color: #999; }
-        .loading { display: none; text-align: center; padding: 30px; }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #28a745;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .message {
-            margin-top: 20px;
-            display: none;
-            opacity: 0;
-            transform: translateY(10px) scale(0.98);
-        }
-        .message.show {
-            display: block;
-            animation: message-in 0.35s ease-out forwards;
-        }
-        .message .msg-inner {
-            position: relative;
-            overflow: hidden;
-            border-radius: 12px;
-            border: 1px solid transparent;
-            padding: 14px 16px;
-        }
-        .message .msg-top {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
         }
+
+        .upload-area:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 24px rgba(15, 118, 110, 0.15);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent);
+            background: linear-gradient(160deg, #fff8ef, #fff4e5);
+        }
+
+        .icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            background: #ffffff;
+            border: 1px solid #d7ece8;
+            box-shadow: 0 8px 20px rgba(17, 76, 106, 0.12);
+        }
+
+        .upload-help {
+            font-size: 13px;
+            color: var(--ink-soft);
+        }
+
+        #preview {
+            display: none;
+            margin-top: 16px;
+            width: 100%;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--line);
+            box-shadow: 0 12px 20px rgba(14, 67, 89, 0.12);
+            max-height: 260px;
+            object-fit: contain;
+            background: #fff;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 14px;
+            text-align: center;
+            color: var(--ink-soft);
+            font-size: 13px;
+        }
+
+        .spinner {
+            border: 4px solid #ecf0f4;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .15s ease, filter .2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(0.97);
+        }
+
+        button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #14947f, #0f766e);
+            color: #fff;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: #dae4ea;
+            color: #244054;
+            min-width: 120px;
+        }
+
+        .btn-save {
+            width: 100%;
+            margin-top: 14px;
+            background: linear-gradient(135deg, #e76f00, #d95f00);
+            color: #fff;
+        }
+
+        .empty-results {
+            min-height: 360px;
+            border: 1px dashed #c8d7e3;
+            border-radius: var(--radius-md);
+            background: var(--surface-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+            text-align: center;
+        }
+
+        .placeholder-copy {
+            color: #6a8093;
+        }
+
+        .result-item {
+            display: grid;
+            grid-template-columns: 145px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid #e7eef5;
+            padding: 10px 0;
+        }
+
+        .result-item:last-child {
+            border-bottom: 0;
+        }
+
+        .result-item strong {
+            color: #0e5a74;
+            font-size: 13px;
+        }
+
+        .result-item input {
+            border: 1px solid #cddae4;
+            border-radius: 8px;
+            padding: 9px 10px;
+            font-size: 13px;
+            color: var(--ink);
+            background: #fff;
+        }
+
+        .result-item input:focus {
+            outline: none;
+            border-color: #2489a0;
+            box-shadow: 0 0 0 3px rgba(36, 137, 160, 0.15);
+        }
+
+        .message {
+            margin-top: 16px;
+            display: none;
+            opacity: 0;
+            transform: translateY(8px) scale(.98);
+        }
+
+        .message.show {
+            display: block;
+            animation: message-in .3s ease-out forwards;
+        }
+
+        .message .msg-inner {
+            border-radius: 14px;
+            border: 1px solid transparent;
+            padding: 14px 16px;
+        }
+
+        .message .msg-top {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            justify-content: center;
+        }
+
         .message .msg-icon {
             width: 34px;
             height: 34px;
@@ -79,137 +343,91 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            line-height: 1;
+            font-size: 17px;
         }
+
         .message .msg-title {
             font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.2px;
+            font-weight: 800;
         }
+
         .message .msg-text {
             margin-top: 7px;
-            font-size: 13px;
-            line-height: 1.35;
             text-align: center;
-        }
-        .message.success .msg-inner {
-            background: linear-gradient(135deg, #edfff4 0%, #d7f8e6 48%, #c8f1fa 100%);
-            border-color: #9fe2c0;
-            color: #0f5132;
-            box-shadow: 0 8px 22px rgba(21, 87, 36, 0.18);
-        }
-        .message.success .msg-icon {
-            background: rgba(255, 255, 255, 0.85);
-            color: #118847;
-            animation: pulse-glow 1.4s ease-in-out infinite;
-        }
-        .message.success-final .msg-inner {
-            background: linear-gradient(135deg, #e8fff2 0%, #c8f8df 45%, #b8eefc 100%);
-            border-color: #69d7a3;
-            color: #0a4a2d;
-            border-width: 2px;
-            box-shadow: 0 14px 34px rgba(13, 114, 64, 0.28);
-            padding: 20px 22px;
-            animation: success-pop 0.45s ease-out;
-        }
-        .message.success-final .msg-icon {
-            width: 44px;
-            height: 44px;
-            font-size: 24px;
-            background: #ffffff;
-            color: #129a53;
-            animation: pulse-glow-strong 1.1s ease-in-out infinite;
-        }
-        .message.success-final .msg-title {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 0.3px;
-        }
-        .message.success-final .msg-text {
-            margin-top: 10px;
-            font-size: 17px;
-            line-height: 1.45;
-            font-weight: 600;
-        }
-        .message.info .msg-inner {
-            background: linear-gradient(135deg, #eef5ff 0%, #dcebff 52%, #d4f3ff 100%);
-            border-color: #9dc4ff;
-            color: #0b3f8a;
-            box-shadow: 0 8px 22px rgba(11, 94, 215, 0.16);
-        }
-        .message.info .msg-icon {
-            background: rgba(255, 255, 255, 0.9);
-            color: #0b5ed7;
-            animation: spin-soft 1.2s linear infinite;
-        }
-        .message.error .msg-inner {
-            background: linear-gradient(135deg, #fff1f1 0%, #ffe0e0 55%, #ffd4d4 100%);
-            border-color: #f2afaf;
-            color: #7a1d1d;
-            box-shadow: 0 8px 22px rgba(114, 28, 36, 0.16);
-        }
-        .message.error .msg-icon {
-            background: rgba(255, 255, 255, 0.9);
-            color: #b52b2b;
-        }
-        .message .msg-inner::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -130%;
-            width: 70%;
-            height: 100%;
-            transform: skewX(-20deg);
-            background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.4), rgba(255,255,255,0));
-            animation: shine 1.9s ease-out 1;
-            pointer-events: none;
-        }
-        @keyframes message-in {
-            from { opacity: 0; transform: translateY(10px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(17, 136, 71, 0.18); }
-            50% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(17, 136, 71, 0); }
-        }
-        @keyframes pulse-glow-strong {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(18, 154, 83, 0.3); }
-            50% { transform: scale(1.1); box-shadow: 0 0 0 12px rgba(18, 154, 83, 0); }
-        }
-        @keyframes success-pop {
-            0% { transform: scale(0.96); }
-            65% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-        @keyframes spin-soft {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        @keyframes shine {
-            from { left: -130%; }
-            to { left: 150%; }
-        }
-        .result-item input {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 3px 6px;
             font-size: 13px;
-            width: calc(100% - 148px);
-            color: #333;
+            line-height: 1.4;
         }
-        .result-item input:focus { border-color: #0b5ed7; outline: none; }
-        .btn-save { background: #17a2b8; color: white; }
-        .button-group { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
-        button { padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-size: 13px; font-weight: bold; }
-        .btn-primary { background: #28a745; color: white; }
-        .btn-primary:hover { background: #218838; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-secondary:hover { background: #5a6268; }
-        .link-section { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
-        .link-section a { display: inline-block; margin: 5px 10px; color: #0b5ed7; text-decoration: none; font-weight: bold; }
-        .loading-init { text-align: center; padding: 100px 20px; }
+
+        .message.info .msg-inner {
+            background: #eef7ff;
+            border-color: #bfdbf8;
+            color: #14558c;
+        }
+
+        .message.info .msg-icon {
+            background: #fff;
+            color: #2574b0;
+            animation: spin-soft 1.3s linear infinite;
+        }
+
+        .message.success .msg-inner {
+            background: #ecfff3;
+            border-color: #b8e9cd;
+            color: #0d5f38;
+        }
+
+        .message.success .msg-icon,
+        .message.success-final .msg-icon {
+            background: #fff;
+            color: var(--success);
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        .message.success-final .msg-inner {
+            background: linear-gradient(135deg, #e6fff1, #fef8ec);
+            border-color: #9be0b8;
+            color: #0a5331;
+            border-width: 2px;
+            box-shadow: 0 12px 25px rgba(18, 130, 76, 0.18);
+        }
+
+        .message.error .msg-inner {
+            background: #fff1f3;
+            border-color: #f3c1cb;
+            color: var(--danger);
+        }
+
+        .message.error .msg-icon {
+            background: #fff;
+            color: var(--danger);
+        }
+
+        .link-section {
+            margin-top: 24px;
+            text-align: center;
+            border-top: 1px solid #d9e6ef;
+            padding-top: 20px;
+        }
+
+        .link-section p {
+            font-size: 14px;
+            color: #35566b;
+        }
+
+        .link-section a {
+            display: inline-block;
+            margin-top: 8px;
+            text-decoration: none;
+            color: #0d6a67;
+            font-weight: 800;
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        .link-section a:hover {
+            background: #ecfaf7;
+        }
+
         .success-overlay {
             position: fixed;
             inset: 0;
@@ -217,125 +435,192 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background: rgba(9, 25, 49, 0.58);
+            background: rgba(15, 39, 56, 0.55);
             backdrop-filter: blur(4px);
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            z-index: 2000;
-            transition: opacity 0.28s ease, visibility 0.28s ease;
+            z-index: 3000;
+            transition: opacity .28s ease, visibility .28s ease;
         }
+
         .success-overlay.show {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
         }
+
         .success-overlay-card {
-            width: min(680px, 96vw);
-            background: linear-gradient(135deg, #effff5 0%, #cdf8e0 46%, #bdefff 100%);
-            border: 2px solid #67d39f;
+            width: min(700px, 96vw);
             border-radius: 20px;
-            box-shadow: 0 24px 50px rgba(6, 83, 47, 0.35);
-            color: #0a4b2d;
+            border: 2px solid #9adfba;
+            background: linear-gradient(140deg, #edfff4, #fff7ec);
+            color: #0b4e31;
             text-align: center;
-            padding: 34px 28px;
-            transform: translateY(12px) scale(0.96);
-            animation: overlay-in 0.35s ease-out forwards;
+            box-shadow: 0 24px 52px rgba(6, 68, 46, 0.34);
+            padding: 30px 26px;
+            transform: translateY(10px) scale(.97);
+            animation: overlay-in .35s ease-out forwards;
         }
+
         .success-overlay-icon {
             width: 62px;
             height: 62px;
-            margin: 0 auto 12px;
             border-radius: 50%;
-            background: #ffffff;
-            color: #149955;
+            margin: 0 auto 12px;
+            background: #fff;
             font-size: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 20px rgba(20, 153, 85, 0.22);
-            animation: pulse-glow-strong 1s ease-in-out infinite;
+            box-shadow: 0 10px 18px rgba(19, 112, 73, .2);
+            animation: pulse 1.2s ease-in-out infinite;
         }
+
         .success-overlay-title {
-            font-size: 28px;
+            font-family: "Fraunces", "Georgia", serif;
+            font-size: clamp(27px, 4.5vw, 36px);
             line-height: 1.2;
-            font-weight: 800;
-            letter-spacing: 0.3px;
         }
+
         .success-overlay-text {
             margin-top: 12px;
-            font-size: 19px;
-            line-height: 1.45;
-            font-weight: 600;
-            color: #0d5b37;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0d5c38;
+            line-height: 1.4;
         }
+
         .success-overlay-sub {
-            margin-top: 12px;
+            margin-top: 10px;
             font-size: 13px;
-            color: #1f6e4b;
-            opacity: 0.9;
+            color: #376b51;
         }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spin-soft {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(18, 130, 76, 0.2); }
+            50% { transform: scale(1.07); box-shadow: 0 0 0 9px rgba(18, 130, 76, 0); }
+        }
+
+        @keyframes rise-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes message-in {
+            from { opacity: 0; transform: translateY(8px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         @keyframes overlay-in {
-            from { transform: translateY(12px) scale(0.96); }
+            from { transform: translateY(10px) scale(.97); }
             to { transform: translateY(0) scale(1); }
         }
-        @media (max-width: 768px) { .content-row { grid-template-columns: 1fr; } }
-        @media (max-width: 768px) {
-            .success-overlay-card { padding: 26px 18px; }
-            .success-overlay-title { font-size: 24px; }
-            .success-overlay-text { font-size: 17px; }
+
+        @media (max-width: 980px) {
+            .content-row {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 620px) {
+            body {
+                padding: 14px;
+            }
+
+            .page-shell {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                width: 100%;
+            }
+
+            .result-item {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .success-overlay-card {
+                padding: 24px 16px;
+            }
+
+            .success-overlay-text {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>📋 OCR de Pacientes</h1>
-    <p class="subtitle">Sube la imagen del documento para extraer datos automáticamente</p>
+<div class="page-shell">
+    <header class="hero">
+        <span class="hero-badge">Programa RCV</span>
+        <h1>OCR de Pacientes</h1>
+        <p>Sube la imagen del documento para extraer y validar datos del paciente de forma automatizada.</p>
+    </header>
 
-    <!-- PANTALLA DE CARGA -->
     <div id="loading-init" class="loading-init">
         <div class="spinner"></div>
-        <p style="margin-top: 20px; font-size: 16px; color: #666;">Inicializando OCR...</p>
-        <p style="font-size: 12px; color: #999; margin-top: 10px;">La primera vez puede tardar 30-60 segundos</p>
+        <p class="loading-title">Inicializando OCR...</p>
+        <p class="loading-copy">La primera vez puede tardar de 30 a 60 segundos.</p>
     </div>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div id="main-content" style="display: none;">
+    <div id="main-content" class="main-content" style="display: none;">
         <div class="content-row">
-            <!-- IMAGEN -->
-            <div>
-                <h2>📸 Cargar Imagen</h2>
+            <section class="panel">
+                <h2>Cargar imagen</h2>
                 <div class="upload-area" id="uploadArea">
                     <div class="icon">📤</div>
-                    <p><strong>Haz clic o arrastra</strong></p>
-                    <p style="font-size: 12px;">O pega (Ctrl+V)</p>
+                    <p><strong>Haz clic o arrastra el documento</strong></p>
+                    <p class="upload-help">También puedes pegar una captura con Ctrl+V</p>
                 </div>
+
                 <img id="preview" alt="Previsualización">
+
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
-                    <p style="margin-top: 10px; font-size: 13px;">Extrayendo datos...</p>
+                    <p style="margin-top: 10px;">Extrayendo datos...</p>
                 </div>
-                <div class="button-group">
-                    <button class="btn-primary" id="procesar" onclick="procesarImagen()" disabled>✅ Procesar</button>
-                    <button class="btn-secondary" onclick="limpiar()">🗑️ Limpiar</button>
-                </div>
-                <div class="message" id="mensaje"></div>
-            </div>
 
-            <!-- RESULTADOS -->
-            <div>
-                <h2>📊 Datos Extraídos</h2>
-                <div id="resultados" class="empty-results">
-                    <p>Se mostrarán aquí los datos extraídos</p>
+                <div class="button-group">
+                    <button class="btn-primary" id="procesar" onclick="procesarImagen()" disabled>Procesar</button>
+                    <button class="btn-secondary" onclick="limpiar()">Limpiar</button>
                 </div>
-                <button class="btn-save" id="guardar" onclick="guardarManual()" style="width: 100%; display: none; margin-top: 8px;">💾 Guardar datos</button>
-            </div>
+
+                <div class="message" id="mensaje"></div>
+            </section>
+
+            <section class="panel">
+                <h2>Datos extraídos</h2>
+                <div id="resultados" class="empty-results">
+                    <p class="placeholder-copy">Se mostrarán aquí los datos extraídos.</p>
+                </div>
+                <button class="btn-save" id="guardar" onclick="guardarManual()" style="display: none;">Guardar datos</button>
+            </section>
         </div>
 
         <div class="link-section">
-            <p>👥 ¿Eres administrador?</p>
-            <a href="/resultados">👁️ Ver Todos los Resultados</a>
+            <p>¿Eres administrador?</p>
+            <a href="/resultados">Ver todos los resultados</a>
         </div>
     </div>
 </div>
@@ -343,7 +628,7 @@
 <div id="successOverlay" class="success-overlay" onclick="ocultarOverlayExito()">
     <div class="success-overlay-card" role="status" aria-live="polite" onclick="event.stopPropagation()">
         <div class="success-overlay-icon">🎉</div>
-        <div class="success-overlay-title" id="overlayTitulo">¡Proceso completado!</div>
+        <div class="success-overlay-title" id="overlayTitulo">Proceso completado</div>
         <div class="success-overlay-text" id="overlayDetalle">Paciente ingresado al programa de riesgo cardiovascular.</div>
         <div class="success-overlay-sub">Este aviso se cierra automáticamente</div>
     </div>
@@ -356,19 +641,18 @@
     let archivoSeleccionado = null;
     let procesando = false;
     let overlayTimer = null;
-    const CAMPOS_FORMULARIO = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento"];
+    const CAMPOS_FORMULARIO = ["Nombre", "Tipo De Documento", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento"];
 
     function obtenerValorCampo(datos, campo) {
         if (!datos) return "";
 
-        if (campo === "RC") {
-            return String(datos["RC"] ?? datos["Número Documento"] ?? "").trim();
+        if (campo === "Tipo De Documento") {
+            return String(datos["Tipo De Documento"] ?? datos["Número Documento"] ?? "").trim();
         }
 
         return String(datos[campo] ?? "").trim();
     }
 
-    // Verificar si OCR está listo
     async function checkOCRStatus() {
         try {
             const response = await fetch("/health");
@@ -394,17 +678,14 @@
         const uploadArea = document.getElementById("uploadArea");
         uploadArea.addEventListener("dragover", (e) => {
             e.preventDefault();
-            uploadArea.style.borderColor = "#0056b3";
-            uploadArea.style.background = "#e7f1ff";
+            uploadArea.classList.add("dragover");
         });
         uploadArea.addEventListener("dragleave", () => {
-            uploadArea.style.borderColor = "#0b5ed7";
-            uploadArea.style.background = "#f9f9f9";
+            uploadArea.classList.remove("dragover");
         });
         uploadArea.addEventListener("drop", (e) => {
             e.preventDefault();
-            uploadArea.style.borderColor = "#0b5ed7";
-            uploadArea.style.background = "#f9f9f9";
+            uploadArea.classList.remove("dragover");
             if (e.dataTransfer.files.length > 0) manejarArchivo(e.dataTransfer.files[0]);
         });
         uploadArea.addEventListener("click", () => document.getElementById("fileInput").click());
@@ -445,6 +726,7 @@
             document.getElementById("preview").src = e.target.result;
             document.getElementById("preview").style.display = "block";
             document.getElementById("procesar").disabled = false;
+            document.getElementById("uploadArea").classList.remove("dragover");
             limpiarMensaje();
         };
         reader.readAsDataURL(file);
@@ -505,7 +787,9 @@
             const id = "campo_" + campo.replace(/\s+/g, "_");
             html += `<div class="result-item"><strong>${campo}:</strong> <input id="${id}" value="${valor}" placeholder="-"></div>`;
         });
-        document.getElementById("resultados").innerHTML = html;
+        const contenedorResultados = document.getElementById("resultados");
+        contenedorResultados.classList.remove("empty-results");
+        contenedorResultados.innerHTML = html;
         document.getElementById("guardar").style.display = "block";
     }
 
@@ -524,8 +808,8 @@
 
     async function guardarManual() {
         const datos = leerDatosFormulario();
-        if (!datos["Nombre"] && !datos["RC"]) {
-            mostrarMensaje("❌ Completa al menos Nombre o RC antes de guardar", "error");
+        if (!datos["Nombre"] && !datos["Tipo De Documento"]) {
+            mostrarMensaje("❌ Completa al menos Nombre o Tipo De Documento antes de guardar", "error");
             return;
         }
         try {
@@ -558,8 +842,13 @@
         document.getElementById("fileInput").value = "";
         document.getElementById("preview").style.display = "none";
         document.getElementById("procesar").disabled = true;
-        document.getElementById("resultados").innerHTML = '<p>Se mostrarán aquí los datos extraídos</p>';
+
+        const contenedorResultados = document.getElementById("resultados");
+        contenedorResultados.className = "empty-results";
+        contenedorResultados.innerHTML = '<p class="placeholder-copy">Se mostrarán aquí los datos extraídos.</p>';
+
         document.getElementById("guardar").style.display = "none";
+        document.getElementById("uploadArea").classList.remove("dragover");
         limpiarMensaje();
         ultimosDatos = null;
         archivoSeleccionado = null;
@@ -646,7 +935,6 @@
         }
     }
 
-    // Verificar OCR al cargar
     checkOCRStatus();
 </script>
 

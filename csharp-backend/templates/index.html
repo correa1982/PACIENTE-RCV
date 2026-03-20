@@ -2,114 +2,316 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OCR Paciente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial; background: #f4f6f9; padding: 20px; }
-        .container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; }
-        .section {
-            flex: 1;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,.1);
+        :root {
+            --ink: #13384f;
+            --ink-soft: #4d687c;
+            --primary: #0f766e;
+            --primary-strong: #0b5f59;
+            --accent: #df6700;
+            --line: #d4e2ec;
+            --surface: #ffffff;
+            --surface-soft: #f6fbff;
         }
-        h2 { margin-bottom: 20px; color: #333; }
-        .upload-area {
-            border: 2px dashed #0b5ed7;
-            border-radius: 8px;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Manrope", "Segoe UI", sans-serif;
+            min-height: 100vh;
+            color: var(--ink);
+            padding: 22px;
+            background:
+                radial-gradient(circle at 12% 10%, #d8f2eb 0, #d8f2eb 18%, transparent 40%),
+                radial-gradient(circle at 86% 88%, #d9e7ff 0, #d9e7ff 20%, transparent 40%),
+                linear-gradient(140deg, #eef8f7, #ebf3ff);
+        }
+
+        .page-shell {
+            width: min(1240px, 100%);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.89);
+            border: 1px solid rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 24px 48px rgba(11, 50, 79, 0.16);
+            backdrop-filter: blur(8px);
             padding: 30px;
+        }
+
+        .hero {
             text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
+            margin-bottom: 24px;
         }
-        .upload-area:hover { background: #f0f7ff; }
-        .upload-area.dragover { background: #e7f1ff; border-color: #0056b3; }
-        #preview {
-            max-width: 100%;
-            max-height: 300px;
-            margin: 15px auto;
-            border-radius: 8px;
-            display: none;
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            border: 1px solid #bcebdd;
+            background: #ecfffa;
+            color: var(--primary-strong);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 7px 12px;
+            margin-bottom: 12px;
         }
-        button {
-            padding: 10px 20px;
-            background: #0b5ed7;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-top: 15px;
+
+        h1 {
+            font-family: "Fraunces", "Georgia", serif;
+            font-size: clamp(30px, 4.8vw, 44px);
+            line-height: 1.1;
+            margin-bottom: 8px;
+            color: #153d54;
+        }
+
+        .subtitle {
+            color: var(--ink-soft);
             font-size: 14px;
         }
-        button:hover { background: #0056b3; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        input[type="file"] { display: none; }
-        .resultado {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            border-left: 4px solid #0b5ed7;
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 22px;
         }
-        .resultado p { margin: 8px 0; }
-        .resultado strong { color: #0b5ed7; }
-        .loading { display: none; text-align: center; margin: 20px 0; }
+
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 24px rgba(14, 52, 79, 0.07);
+        }
+
+        h2 {
+            margin-bottom: 14px;
+            font-size: 18px;
+            color: #16455f;
+        }
+
+        .upload-area {
+            border: 2px dashed #3e9f93;
+            border-radius: 12px;
+            background: linear-gradient(160deg, #f4fffc, #edf8ff);
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+            text-align: center;
+            cursor: pointer;
+            padding: 24px;
+            transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(15, 118, 110, 0.13);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent);
+            background: linear-gradient(160deg, #fff8ee, #fff2e3);
+        }
+
+        .upload-note {
+            font-size: 12px;
+            color: #5f7789;
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 280px;
+            margin: 14px auto 0;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            display: none;
+            object-fit: contain;
+            background: #fff;
+            box-shadow: 0 12px 20px rgba(14, 67, 89, 0.12);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 18px 0;
+            color: var(--ink-soft);
+            font-size: 13px;
+        }
+
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0b5ed7;
+            border: 4px solid #edf1f5;
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 34px;
+            height: 34px;
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
+
+        .button-row {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform .15s ease, filter .2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            filter: brightness(0.97);
+        }
+
+        button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: linear-gradient(135deg, #14947f, #0f766e);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #dde7ee;
+            color: #26465a;
+        }
+
+        .btn-accent {
+            width: 100%;
+            margin-top: 16px;
+            background: linear-gradient(135deg, #e77002, #d95f00);
+            color: #fff;
+        }
+
+        .resultado {
+            background: var(--surface-soft);
+            border: 1px solid #dae5ef;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .resultado p {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #1d3f56;
+        }
+
+        .resultado strong {
+            color: #0f5f7e;
+        }
+
+        .empty-copy {
+            color: #6f8698;
+            text-align: center;
+            padding: 52px 0;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 900px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 620px) {
+            body {
+                padding: 12px;
+            }
+
+            .page-shell {
+                padding: 20px;
+            }
+
+            .button-row {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- SECCIÓN 1: CARGA DE IMAGEN -->
-    <div class="section">
-        <h2>📋 Subir Imagen del Paciente</h2>
-        <div class="upload-area" id="uploadArea">
-            <p>📸 Haz clic o arrastra una imagen aquí</p>
-            <p style="font-size: 12px; color: #666; margin-top: 10px;">(También puedes pegar desde el portapapeles con Ctrl+V)</p>
-            <img id="preview" alt="Previsualización">
-        </div>
-        <input type="file" id="fileInput" name="imagen" accept="image/*">
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Procesando imagen...</p>
-        </div>
-        <button id="submitBtn" onclick="enviarImagen()" disabled>📥 Generar Excel</button>
-        <button onclick="limpiar()" style="background: #6c757d;">🗑️ Limpiar</button>
-    </div>
+<div class="page-shell">
+    <header class="hero">
+        <span class="hero-badge">Asistente OCR</span>
+        <h1>Carga y extracción clínica</h1>
+        <p class="subtitle">Procesa documentos de pacientes y valida campos en un solo panel.</p>
+    </header>
 
-    <!-- SECCIÓN 2: RESULTADOS -->
-    <div class="section">
-        <h2>✅ Datos Extraídos</h2>
-        <div id="resultadosDiv" style="display: none;">
-            <div class="resultado">
-                <p><strong>Nombre:</strong> <span id="resNombre">-</span></p>
-                <p><strong>Tipo de Documento:</strong> <span id="resTipoDocumento">-</span></p>
-                <p><strong>Número Documento:</strong> <span id="resNumeroDocumento">-</span></p>
-                <p><strong>Edad:</strong> <span id="resEdad">-</span></p>
-                <p><strong>Fecha Nacimiento:</strong> <span id="resFechaNac">-</span></p>
-                <p><strong>ID Atención:</strong> <span id="resIdAtencion">-</span></p>
-                <p><strong>Especialidad:</strong> <span id="resEspecialidad">-</span></p>
-                <p><strong>Sexo Biológico:</strong> <span id="resSexo">-</span></p>
-                <p><strong>Diagnóstico:</strong> <span id="resDiag">-</span></p>
-                <p><strong>Aseguradora:</strong> <span id="resAseg">-</span></p>
-                <p><strong>Procedimiento:</strong> <span id="resProc">-</span></p>
+    <div class="content-grid">
+        <section class="section">
+            <h2>Subir imagen del paciente</h2>
+            <div class="upload-area" id="uploadArea">
+                <p><strong>Haz clic o arrastra una imagen aquí</strong></p>
+                <p class="upload-note">También puedes pegar desde el portapapeles con Ctrl+V</p>
+                <img id="preview" alt="Previsualización">
             </div>
-            <button onclick="descargarExcel()" style="background: #28a745; width: 100%; margin-top: 20px;">📥 Descargar Excel</button>
-        </div>
-        <p id="noResultados" style="color: #999; text-align: center; padding: 40px 0;">Sube una imagen para ver los resultados</p>
+
+            <input type="file" id="fileInput" name="imagen" accept="image/*">
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 8px;">Procesando imagen...</p>
+            </div>
+
+            <div class="button-row">
+                <button class="btn-primary" id="submitBtn" onclick="enviarImagen()" disabled>Generar datos</button>
+                <button class="btn-secondary" onclick="limpiar()">Limpiar</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Datos extraídos</h2>
+            <div id="resultadosDiv" style="display: none;">
+                <div class="resultado">
+                    <p><strong>Nombre:</strong> <span id="resNombre">-</span></p>
+                    <p><strong>Tipo de Documento:</strong> <span id="resTipoDocumento">-</span></p>
+                    <p><strong>Número Documento:</strong> <span id="resNumeroDocumento">-</span></p>
+                    <p><strong>Edad:</strong> <span id="resEdad">-</span></p>
+                    <p><strong>Fecha Nacimiento:</strong> <span id="resFechaNac">-</span></p>
+                    <p><strong>ID Atención:</strong> <span id="resIdAtencion">-</span></p>
+                    <p><strong>Especialidad:</strong> <span id="resEspecialidad">-</span></p>
+                    <p><strong>Sexo Biológico:</strong> <span id="resSexo">-</span></p>
+                    <p><strong>Diagnóstico:</strong> <span id="resDiag">-</span></p>
+                    <p><strong>Aseguradora:</strong> <span id="resAseg">-</span></p>
+                    <p><strong>Procedimiento:</strong> <span id="resProc">-</span></p>
+                </div>
+                <button class="btn-accent" onclick="descargarExcel()">Descargar Excel</button>
+            </div>
+            <p id="noResultados" class="empty-copy">Sube una imagen para ver los resultados.</p>
+        </section>
     </div>
 </div>
 
@@ -117,7 +319,6 @@
     let imagenArchivo = null;
     let datosExtraidos = null;
 
-    // Manejo de arrastrar y soltar
     const uploadArea = document.getElementById("uploadArea");
     uploadArea.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -131,13 +332,11 @@
         if (files.length > 0) manejarArchivo(files[0]);
     });
 
-    // Clic para subir archivo
     uploadArea.addEventListener("click", () => document.getElementById("fileInput").click());
     document.getElementById("fileInput").addEventListener("change", (e) => {
         if (e.target.files.length > 0) manejarArchivo(e.target.files[0]);
     });
 
-    // Pegar imagen desde portapapeles
     document.addEventListener("paste", (e) => {
         const items = e.clipboardData.items;
         for (let item of items) {
@@ -155,13 +354,14 @@
             document.getElementById("preview").src = e.target.result;
             document.getElementById("preview").style.display = "block";
             document.getElementById("submitBtn").disabled = false;
+            uploadArea.classList.remove("dragover");
         };
         reader.readAsDataURL(file);
     }
 
     async function enviarImagen() {
         if (!imagenArchivo) return;
-        
+
         const formData = new FormData();
         formData.append("imagen", imagenArchivo);
 
@@ -179,6 +379,7 @@
             alert("Error al procesar imagen: " + error);
         } finally {
             document.getElementById("loading").style.display = "none";
+            document.getElementById("submitBtn").disabled = false;
         }
     }
 
@@ -186,7 +387,7 @@
         datosExtraidos = datos;
         document.getElementById("noResultados").style.display = "none";
         document.getElementById("resultadosDiv").style.display = "block";
-        
+
         document.getElementById("resNombre").textContent = datos.Nombre || "-";
         document.getElementById("resTipoDocumento").textContent = datos["Tipo de Documento"] || "-";
         document.getElementById("resNumeroDocumento").textContent = datos["Número Documento"] || "-";
@@ -218,6 +419,7 @@
         document.getElementById("submitBtn").disabled = true;
         document.getElementById("resultadosDiv").style.display = "none";
         document.getElementById("noResultados").style.display = "block";
+        uploadArea.classList.remove("dragover");
     }
 </script>
 

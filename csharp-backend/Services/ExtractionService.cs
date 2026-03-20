@@ -6,14 +6,18 @@ namespace PacienteRcv.Services;
 
 public sealed class ExtractionService
 {
+    private const string DiagnosticoLabelPattern = @"diag(?:n[oó0]s?t(?:i|1|l)?co)?|dx";
+
     private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
     private static readonly Regex AgeLabelRegex = new(@"\b(?:edad|edac|edao|edqd|edod)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex AgeNumberRegex = new(@"\b(\d{1,3})\b", RegexOptions.Compiled);
     private static readonly Regex AgeYearsRegex = new(@"\b(\d{1,3})\s*(?:a(?:ñ|n|fi|f|h)?os?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex NameTagRegex = new(@"\b(?:nombre|paciente)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex DocumentTagRegex = new(@"^(?:cc|rc|c\.c\.?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex DiagnosticoTagRegex = new(@"\b(?:diagn[o0]s?t(?:i|1|l)?co|diag|dx)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex DiagnosticoInlineRegex = new(@"(?ix)(?:diagn[o0]s?t(?:i|1|l)?co|diag|dx)\s*[:\-]?\s*(.+)$", RegexOptions.Compiled);
+    private static readonly Regex DiagnosticoTagRegex = new(@"\b(?:" + DiagnosticoLabelPattern + @")\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DiagnosticoInlineRegex = new(@"\b(?:" + DiagnosticoLabelPattern + @")\b\s*[:\-]?\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DiagnosticoPrefixRegex = new(@"^.*?\b(?:" + DiagnosticoLabelPattern + @")\b\s*[:\-]?\s*", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private static readonly Regex DiagnosticoLabelResidueRegex = new(@"^(?:n[oó0]s?t(?:i|1|l)?co|diag|dx)\b\s*[:\-]?\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex LettersRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]", RegexOptions.Compiled);
     private static readonly Regex WordBlocksRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{2,}", RegexOptions.Compiled);
 
@@ -30,7 +34,7 @@ public sealed class ExtractionService
         ["ID Atención"] = new Regex(@"[Ii]d\s*[:\s]*[Aa]tenci[oó]n\s*[:\s]*(\d+)", DefaultOptions),
         ["Especialidad"] = new Regex(@"[Ee]specialidad\s*[:\s]+(.+?)(?=\n|[Ss]exo|$)", DefaultOptions | RegexOptions.Singleline),
         ["Sexo Biológico"] = new Regex(@"[Ss]exo\s*[Bb]iol[oó]gico\s*[:\s]*(\w+)", DefaultOptions),
-        ["Diagnóstico"] = new Regex(@"[Dd]iagn[oó]s?tico\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|[Pp]rocedimiento|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
+        ["Diagnóstico"] = new Regex(@"[Dd]iag(?:n[oó0]s?t(?:i|1|l)?co)?\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|[Pp]rocedimiento|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
         ["Aseguradora"] = new Regex(@"[Aa]seguradora\s*[:\s]*(.+?)(?=\n|[Pp]rocedimiento|$)", DefaultOptions | RegexOptions.Singleline),
         ["Procedimiento"] = new Regex(@"[Pp]rocedimiento\s*[:\s]*(.+?)(?=\n|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
     };
@@ -110,12 +114,6 @@ public sealed class ExtractionService
             datos["ID Atención"] = atencionDetectada;
         }
 
-        var diagnosticoDetectado = ExtractDiagnosticoFromLines(text);
-        if (!string.IsNullOrWhiteSpace(diagnosticoDetectado))
-        {
-            datos["Diagnóstico"] = diagnosticoDetectado;
-        }
-
         var nombreDetectado = ExtractNameFromLines(text);
         if (string.IsNullOrWhiteSpace(nombreDetectado))
         {
@@ -124,6 +122,15 @@ public sealed class ExtractionService
         if (!string.IsNullOrWhiteSpace(nombreDetectado))
         {
             datos["Nombre"] = nombreDetectado;
+        }
+
+        var diagnosticoDetectado = ExtractDiagnosticoFromLines(text);
+        if (!string.IsNullOrWhiteSpace(diagnosticoDetectado))
+        {
+            var diagnosticoLimpio = RemovePatientNameFromDiagnostico(diagnosticoDetectado, nombreDetectado);
+            datos["Diagnóstico"] = string.IsNullOrWhiteSpace(diagnosticoLimpio)
+                ? diagnosticoDetectado
+                : diagnosticoLimpio;
         }
 
         // FIX Bug 4: usar el diccionario estático Patrones en lugar de recrearlo aquí.
@@ -150,6 +157,12 @@ public sealed class ExtractionService
                 continue;
 
             var valor = NormalizeLine(match.Groups[1].Value);
+            if (campo == "Diagnóstico")
+            {
+                valor = CleanDiagnosticoValue(valor);
+                var diagnosticoSinNombre = RemovePatientNameFromDiagnostico(valor, datos["Nombre"]);
+                valor = string.IsNullOrWhiteSpace(diagnosticoSinNombre) ? valor : diagnosticoSinNombre;
+            }
 
             // FIX Bug 6: cuando el patrón "RC" coincide, guardar en "Número Documento".
             var claveDestino = campo == "RC" ? "Número Documento" : campo;
@@ -400,11 +413,7 @@ public sealed class ExtractionService
             }
             else
             {
-                var afterTag = Regex.Replace(
-                    line,
-                    @"(?ix)^.*?\b(?:diagn[o0]s?t(?:i|1|l)?co|diag|dx)\b\s*[:\-]?\s*",
-                    string.Empty,
-                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Trim();
+                var afterTag = DiagnosticoPrefixRegex.Replace(line, string.Empty).Trim();
 
                 var cleanedAfterTag = CleanDiagnosticoValue(afterTag);
                 if (!string.IsNullOrWhiteSpace(cleanedAfterTag))
@@ -612,6 +621,7 @@ public sealed class ExtractionService
         var cut = DiagnosticoStopWordsRegex.Split(normalized, 2);
 
         normalized = (cut.FirstOrDefault() ?? string.Empty).Trim(" -,:;|\"'".ToCharArray());
+        normalized = DiagnosticoLabelResidueRegex.Replace(normalized, string.Empty);
         normalized = NormalizeLine(normalized);
 
         if (normalized.Length < 3)
@@ -625,6 +635,59 @@ public sealed class ExtractionService
         }
 
         return normalized;
+    }
+
+    private static string RemovePatientNameFromDiagnostico(string diagnostico, string nombrePaciente)
+    {
+        var valorDiagnostico = NormalizeLine(diagnostico);
+        if (string.IsNullOrWhiteSpace(valorDiagnostico) || string.IsNullOrWhiteSpace(nombrePaciente))
+        {
+            return valorDiagnostico;
+        }
+
+        var palabrasDiagnostico = valorDiagnostico
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+        var palabrasNombre = NormalizeLine(nombrePaciente)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(token => token.Trim(" -,:;|\"'().".ToCharArray()))
+            .Where(token => token.Length > 0)
+            .ToList();
+
+        if (palabrasDiagnostico.Count == 0 || palabrasNombre.Count == 0)
+        {
+            return valorDiagnostico;
+        }
+
+        var coincidencias = 0;
+        var maxComparaciones = Math.Min(palabrasDiagnostico.Count, palabrasNombre.Count);
+        for (var i = 0; i < maxComparaciones; i++)
+        {
+            var tokenDiagnostico = palabrasDiagnostico[i].Trim(" -,:;|\"'().".ToCharArray());
+            var tokenNombre = palabrasNombre[i];
+            if (tokenDiagnostico.Length == 0 || tokenNombre.Length == 0)
+            {
+                break;
+            }
+
+            if (!string.Equals(
+                    NormalizeForOcrComparison(tokenDiagnostico),
+                    NormalizeForOcrComparison(tokenNombre),
+                    StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            coincidencias++;
+        }
+
+        if (coincidencias < 2)
+        {
+            return valorDiagnostico;
+        }
+
+        var sinNombre = string.Join(" ", palabrasDiagnostico.Skip(coincidencias));
+        return CleanDiagnosticoValue(sinNombre);
     }
 
     private static string FormatAge(string value)

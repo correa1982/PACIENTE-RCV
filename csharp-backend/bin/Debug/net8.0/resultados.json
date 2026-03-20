@@ -1,18 +1,17 @@
 ﻿[
   {
-    "Nombre": "SISTEMAS SISTEMAS, CORAZON SISTEMAS \"CORAZON",
-    "RC": "1234567890",
-    "Edad": "43 años",
-    "Fecha Nacimiento": "20/02/1983",
-    "ID Atención": "7013569",
-    "Especialidad": "Alergologia",
+    "Nombre": "PRUEBAS PRUEBAS, PRUEBAS PRUEBAS \"CAPACITACION",
+    "RC": "0123456789",
+    "Edad": "65 años",
+    "Fecha Nacimiento": "15/07/1960",
+    "ID Atención": "7348776",
+    "Especialidad": "Alergología",
     "Sexo Biológico": "Mujer",
-    "Diagnóstico": "",
-    "Aseguradora": "3755-NUEVA EPS (CONTRIBUTIVO) SEDE HOSPITALARIA 2024",
-    "Procedimiento": "",
-    "Cama": "SIS409",
+    "Diagnóstico": "nóstico C430 - MELANOMA MALIGNO DEL LABIO",
+    "Aseguradora": "3788-ALIANZA MEDELLIN ANTIOQUIA -SUBSIDIADO 2024",
+    "Procedimiento": "ANASTOMOSIS DE INTESTINO GRUESO A INTESTINO GRUESO VIA ABIERTA",
     "Tipo de Documento": "CC",
-    "Número Documento": "1234567890",
-    "timestamp": "2026-03-19 20:10:02"
+    "Número Documento": "0123456789",
+    "timestamp": "2026-03-19 21:27:54"
   }
 ]

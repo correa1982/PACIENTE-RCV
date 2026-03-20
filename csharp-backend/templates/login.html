@@ -4,95 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Resultados Extraídos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --ink: #143247;
+            --ink-soft: #4f697b;
+            --primary: #0f766e;
+            --primary-strong: #0b5f59;
+            --danger: #b4233e;
+            --line: #d4e2ed;
+            --surface: rgba(255, 255, 255, 0.9);
+            --shadow: 0 26px 50px rgba(12, 49, 74, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f9;
+            font-family: "Manrope", "Segoe UI", sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 14% 16%, #d9f3ec 0, #d9f3ec 20%, transparent 40%),
+                radial-gradient(circle at 86% 84%, #dae8ff 0, #dae8ff 20%, transparent 42%),
+                linear-gradient(135deg, #edf8f7, #ebf3ff);
         }
-        .card {
-            width: 100%;
-            max-width: 420px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-            padding: 30px;
+
+        .login-shell {
+            width: min(460px, 100%);
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.95);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+            padding: 28px;
+            animation: rise-in .35s ease-out;
         }
+
+        .label-chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            background: #eafff9;
+            border: 1px solid #b9ebde;
+            color: var(--primary-strong);
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 7px 11px;
+            margin-bottom: 10px;
+        }
+
         h1 {
-            text-align: center;
-            color: #333;
+            font-family: "Fraunces", "Georgia", serif;
+            font-size: clamp(30px, 5vw, 38px);
+            line-height: 1.1;
             margin-bottom: 8px;
-            font-size: 24px;
+            color: #163a4f;
         }
+
         .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 22px;
+            color: var(--ink-soft);
             font-size: 14px;
+            margin-bottom: 20px;
         }
+
         label {
             display: block;
-            margin-bottom: 6px;
-            color: #333;
+            margin-bottom: 7px;
+            color: #21445a;
             font-size: 13px;
-            font-weight: bold;
+            font-weight: 700;
         }
+
         input {
             width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #d8d8d8;
-            border-radius: 6px;
-            margin-bottom: 14px;
+            border: 1px solid #c8d9e5;
+            border-radius: 10px;
+            padding: 12px 12px;
             font-size: 14px;
+            color: #183c53;
+            background: #fff;
+            margin-bottom: 14px;
         }
+
         input:focus {
             outline: none;
-            border-color: #0b5ed7;
+            border-color: #2f8b9b;
+            box-shadow: 0 0 0 3px rgba(47, 139, 155, 0.15);
         }
+
         .btn-login {
             width: 100%;
-            border: none;
-            background: #0b5ed7;
+            border: 0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-weight: 800;
             color: #fff;
-            border-radius: 6px;
-            padding: 11px 12px;
-            font-size: 15px;
-            font-weight: bold;
+            background: linear-gradient(135deg, #14947f, #0f766e);
             cursor: pointer;
+            transition: transform .15s ease, filter .2s ease;
         }
+
         .btn-login:hover {
-            background: #0056b3;
+            transform: translateY(-1px);
+            filter: brightness(0.97);
         }
+
         .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            border-radius: 6px;
-            padding: 10px;
+            background: #fff1f3;
+            border: 1px solid #f4c2cd;
+            color: var(--danger);
+            border-radius: 10px;
+            padding: 10px 12px;
             margin-bottom: 14px;
             font-size: 13px;
+            font-weight: 700;
             text-align: center;
         }
+
         .back-link {
-            display: block;
-            text-align: center;
+            display: inline-block;
             margin-top: 14px;
-            color: #0b5ed7;
             text-decoration: none;
+            color: #0f6b68;
+            font-weight: 800;
             font-size: 13px;
-            font-weight: bold;
+            border-radius: 8px;
+            padding: 6px 8px;
+        }
+
+        .back-link:hover {
+            background: #e9f9f6;
+        }
+
+        @keyframes rise-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🔐 Acceso Admin</h1>
-        <p class="subtitle">Solo para ingresar a Resultados Extraídos</p>
+    <div class="login-shell">
+        <span class="label-chip">Acceso seguro</span>
+        <h1>Panel admin</h1>
+        <p class="subtitle">Ingresa con tus credenciales para administrar resultados extraídos.</p>
 
         {% if error %}
             <div class="error">{{ error }}</div>
