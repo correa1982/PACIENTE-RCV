@@ -17,6 +17,35 @@ public sealed class ExtractionService
     private static readonly Regex LettersRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]", RegexOptions.Compiled);
     private static readonly Regex WordBlocksRegex = new(@"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{2,}", RegexOptions.Compiled);
 
+    // FIX Bug 4: regexes de patrones y contexto de documento como campos estáticos,
+    // para no compilarlos en cada llamada a ExtractData / ExtractNameByDocumentContext.
+    private const RegexOptions DefaultOptions = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+
+    private static readonly Dictionary<string, Regex> Patrones = new(StringComparer.Ordinal)
+    {
+        ["Nombre"] = new Regex(@"(?:PRUEBAS\s+SISTEMAS|Paciente|Nombre)\s*[,:'""*\s]+(.+?)(?=\n|CC|RC|C\.C|$)", DefaultOptions | RegexOptions.Singleline),
+        ["RC"] = new Regex(@"(?:CC|RC|C\.C\.?)\s*[:\s]*(\d[\d\s\.\-]{4,20})", DefaultOptions),
+        ["Edad"] = new Regex(@"(?:Edad|Edac|Edao)\s*[:\-]?\s*(\d{1,3}\s*(?:a(?:ñ|n|fi|f|h)?os?)?)", DefaultOptions),
+        ["Fecha Nacimiento"] = new Regex(@"Fecha\s*(?:de\s*)?[Nn]ac(?:imiento)?\s*[:\s]*([\d]{1,2}[/\-\.][\d]{1,2}[/\-\.][\d]{2,4})", DefaultOptions),
+        ["ID Atención"] = new Regex(@"[Ii]d\s*[:\s]*[Aa]tenci[oó]n\s*[:\s]*(\d+)", DefaultOptions),
+        ["Especialidad"] = new Regex(@"[Ee]specialidad\s*[:\s]+(.+?)(?=\n|[Ss]exo|$)", DefaultOptions | RegexOptions.Singleline),
+        ["Sexo Biológico"] = new Regex(@"[Ss]exo\s*[Bb]iol[oó]gico\s*[:\s]*(\w+)", DefaultOptions),
+        ["Diagnóstico"] = new Regex(@"[Dd]iagn[oó]s?tico\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|[Pp]rocedimiento|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
+        ["Aseguradora"] = new Regex(@"[Aa]seguradora\s*[:\s]*(.+?)(?=\n|[Pp]rocedimiento|$)", DefaultOptions | RegexOptions.Singleline),
+        ["Procedimiento"] = new Regex(@"[Pp]rocedimiento\s*[:\s]*(.+?)(?=\n|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
+        ["Cama"] = new Regex(@"[Cc]ama\s*[:\s]*([\w\d]{2,12})", DefaultOptions),
+    };
+
+    // FIX Bug 4: también estáticos para ExtractNameByDocumentContext y CleanDiagnosticoValue.
+    private static readonly Regex DiagnosticoStopWordsRegex = new(
+        @"\b(?:aseguradora|procedimiento|cama|especialidad|sexo(?:\s+biologico)?|id\s*atenci[oó]n|fecha\s*(?:de\s*)?nac(?:imiento)?|tipo\s+de\s+documento|documento)\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex DocumentContextRegex = new(@"\b(?:cc|rc|c\.c\.?)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NameCutRegex = new(
+        @"\b(?:cc|rc|c\.c\.?|edad|edac|fecha|id|especialidad|sexo|diagn[oó]stico|aseguradora|procedimiento|cama)\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private static readonly string[] UiKeywords =
     {
         "sube la imagen", "cargar imagen", "haz clic", "arrastra",
@@ -42,7 +71,8 @@ public sealed class ExtractionService
         var datos = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["Nombre"] = string.Empty,
-            ["RC"] = string.Empty,
+            ["Número Documento"] = string.Empty,
+            ["Tipo de Documento"] = string.Empty,
             ["Edad"] = string.Empty,
             ["Fecha Nacimiento"] = string.Empty,
             ["ID Atención"] = string.Empty,
@@ -63,7 +93,8 @@ public sealed class ExtractionService
         var (tipoDocumento, numeroDocumento) = ExtractDocumentFromLines(text);
         if (!string.IsNullOrWhiteSpace(numeroDocumento))
         {
-            datos["RC"] = numeroDocumento;
+            // FIX Bug 6: eliminado datos["RC"] = numeroDocumento — el número se guarda
+            // bajo la clave semánticamente correcta "Número Documento".
             datos["Número Documento"] = numeroDocumento;
         }
         if (!string.IsNullOrWhiteSpace(tipoDocumento))
@@ -72,7 +103,6 @@ public sealed class ExtractionService
         }
         else if (!string.IsNullOrWhiteSpace(numeroDocumento))
         {
-            // Si hay número pero no tipo legible, asumir CC para evitar dejarlo vacío.
             datos["Tipo de Documento"] = "CC";
         }
 
@@ -98,57 +128,34 @@ public sealed class ExtractionService
             datos["Nombre"] = nombreDetectado;
         }
 
-        const RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
-        var patrones = new Dictionary<string, Regex>(StringComparer.Ordinal)
-        {
-            ["Nombre"] = new Regex(@"(?:PRUEBAS\s+SISTEMAS|Paciente|Nombre)\s*[,:'""*\s]+(.+?)(?=\n|CC|RC|C\.C|$)", options | RegexOptions.Singleline),
-            ["RC"] = new Regex(@"(?:CC|RC|C\.C\.?)\s*[:\s]*(\d[\d\s\.\-]{4,20})", options),
-            ["Edad"] = new Regex(@"(?:Edad|Edac|Edao)\s*[:\-]?\s*(\d{1,3}\s*(?:a(?:ñ|n|fi|f|h)?os?)?)", options),
-            ["Fecha Nacimiento"] = new Regex(@"Fecha\s*(?:de\s*)?[Nn]ac(?:imiento)?\s*[:\s]*([\d]{1,2}[/\-\.][\d]{1,2}[/\-\.][\d]{2,4})", options),
-            ["ID Atención"] = new Regex(@"[Ii]d\s*[:\s]*[Aa]tenci[oó]n\s*[:\s]*(\d+)", options),
-            ["Especialidad"] = new Regex(@"[Ee]specialidad\s*[:\s]+(.+?)(?=\n|[Ss]exo|$)", options | RegexOptions.Singleline),
-            ["Sexo Biológico"] = new Regex(@"[Ss]exo\s*[Bb]iol[oó]gico\s*[:\s]*(\w+)", options),
-            ["Diagnóstico"] = new Regex(@"[Dd]iagn[oó]s?tico\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|[Pp]rocedimiento|[Cc]ama|$)", options | RegexOptions.Singleline),
-            ["Aseguradora"] = new Regex(@"[Aa]seguradora\s*[:\s]*(.+?)(?=\n|[Pp]rocedimiento|$)", options | RegexOptions.Singleline),
-            ["Procedimiento"] = new Regex(@"[Pp]rocedimiento\s*[:\s]*(.+?)(?=\n|[Cc]ama|$)", options | RegexOptions.Singleline),
-            ["Cama"] = new Regex(@"[Cc]ama\s*[:\s]*([\w\d]{2,12})", options),
-        };
-
-        foreach (var (campo, regex) in patrones)
+        // FIX Bug 4: usar el diccionario estático Patrones en lugar de recrearlo aquí.
+        foreach (var (campo, regex) in Patrones)
         {
             if (campo == "Nombre" && !string.IsNullOrWhiteSpace(datos["Nombre"]))
-            {
                 continue;
-            }
 
             if (campo == "Edad" && !string.IsNullOrWhiteSpace(datos["Edad"]))
-            {
                 continue;
-            }
 
-            if (campo == "RC" && !string.IsNullOrWhiteSpace(datos["RC"]))
-            {
+            // FIX Bug 6: clave de guarda es "Número Documento", no "RC".
+            if (campo == "RC" && !string.IsNullOrWhiteSpace(datos["Número Documento"]))
                 continue;
-            }
 
             if (campo == "ID Atención" && !string.IsNullOrWhiteSpace(datos["ID Atención"]))
-            {
                 continue;
-            }
 
             if (campo == "Diagnóstico" && !string.IsNullOrWhiteSpace(datos["Diagnóstico"]))
-            {
                 continue;
-            }
 
             var match = regex.Match(text);
             if (!match.Success)
-            {
                 continue;
-            }
 
             var valor = NormalizeLine(match.Groups[1].Value);
-            datos[campo] = valor;
+
+            // FIX Bug 6: cuando el patrón "RC" coincide, guardar en "Número Documento".
+            var claveDestino = campo == "RC" ? "Número Documento" : campo;
+            datos[claveDestino] = valor;
         }
 
         return datos;
@@ -283,10 +290,10 @@ public sealed class ExtractionService
             var normalized = NormalizeForOcrComparison(line);
             var compact = normalized.Replace(" ", string.Empty, StringComparison.Ordinal);
 
+            // FIX Bug 5: eliminado Contains("doc") — demasiado genérico.
             var hasDocLabel = compact.Contains("documento", StringComparison.Ordinal) ||
                               compact.Contains("identificacion", StringComparison.Ordinal) ||
-                              compact.Contains("identidad", StringComparison.Ordinal) ||
-                              compact.Contains("doc", StringComparison.Ordinal);
+                              compact.Contains("identidad", StringComparison.Ordinal);
 
             var tipoLinea = NormalizeDocumentType(line);
             if (string.IsNullOrWhiteSpace(tipoLinea))
@@ -349,7 +356,7 @@ public sealed class ExtractionService
         var docNumeroGlobal = Regex.Match(
             text ?? string.Empty,
             @"(?ix)
-            (?:documento|identificacion|identidad|doc)
+            (?:documento|identificacion|identidad)
             [\s:;,#\-]{0,10}
             (\d[\d\s\-\.]{3,22}\d)",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -490,12 +497,8 @@ public sealed class ExtractionService
             return string.Empty;
         }
 
-        var documentRegex = new Regex(@"\b(?:cc|rc|c\.c\.?)\b", RegexOptions.IgnoreCase);
-        var cutRegex = new Regex(
-            @"\b(?:cc|rc|c\.c\.?|edad|edac|fecha|id|especialidad|sexo|diagn[oó]stico|aseguradora|procedimiento|cama)\b",
-            RegexOptions.IgnoreCase);
-
-        var idxDoc = lines.FindIndex(line => documentRegex.IsMatch(line));
+        // FIX Bug 4: usar instancias estáticas DocumentContextRegex y NameCutRegex.
+        var idxDoc = lines.FindIndex(line => DocumentContextRegex.IsMatch(line));
         if (idxDoc < 0)
         {
             return string.Empty;
@@ -505,7 +508,7 @@ public sealed class ExtractionService
         for (var idx = idxDoc - 1; idx >= start; idx--)
         {
             var candidate = CleanName(lines[idx]);
-            var split = cutRegex.Split(candidate, 2);
+            var split = NameCutRegex.Split(candidate, 2);
             candidate = split.FirstOrDefault()?.Trim(" -,:;|\"'".ToCharArray()) ?? string.Empty;
 
             if (IsValidName(candidate, allowSingleBlock: true))
@@ -562,9 +565,12 @@ public sealed class ExtractionService
         var value = NormalizeLine(line).ToLowerInvariant();
         var prefixes = new[]
         {
-            "cc", "rc", "c.c", "edad", "fecha", "id", "especialidad",
-            "sexo", "diagnostico", "diagnóstico", "aseguradora",
-            "procedimiento", "cama", "nombre", "paciente",
+            "cc", "rc", "c.c", "edad", "fecha",
+            // FIX Bug 2: "id" reemplazado por prefijos más específicos para evitar
+            // descartar palabras como "idóneo" o "identificación del médico".
+            "id atención", "id atencion",
+            "especialidad", "sexo", "diagnostico", "diagnóstico",
+            "aseguradora", "procedimiento", "cama", "nombre", "paciente",
             "tipo de documento", "documento", "atencion", "atención"
         };
 
@@ -603,10 +609,9 @@ public sealed class ExtractionService
             return string.Empty;
         }
 
-        var cut = Regex.Split(
-            normalized,
-            @"(?i)\b(?:aseguradora|procedimiento|cama|especialidad|sexo(?:\s+biologico)?|id\s*atenci[oó]n|fecha\s*(?:de\s*)?nac(?:imiento)?|tipo\s+de\s+documento|documento)\b",
-            2);
+        // FIX: Regex.Split estático no tiene sobrecarga (string, string, int).
+        // Se usa la instancia estática con el método de instancia Split(string, int).
+        var cut = DiagnosticoStopWordsRegex.Split(normalized, 2);
 
         normalized = (cut.FirstOrDefault() ?? string.Empty).Trim(" -,:;|\"'".ToCharArray());
         normalized = NormalizeLine(normalized);
@@ -637,7 +642,8 @@ public sealed class ExtractionService
 
     private static List<string> SplitLines(string text)
     {
-        return text
+        // FIX Bug 3: manejar text null con el operador ?? para evitar NullReferenceException.
+        return (text ?? string.Empty)
             .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
             .Select(NormalizeLine)
             .Where(line => line.Length > 0)
@@ -696,24 +702,24 @@ public sealed class ExtractionService
             return "NIT";
         }
 
-        if (normalized.Contains("rc", StringComparison.Ordinal))
+        // FIX Bug 1: usar comparación exacta en lugar de Contains para evitar
+        // falsos positivos con palabras que contengan "rc", "cc", "ti", "ce" internamente.
+        if (normalized is "rc" or "r.c" or "r.c.")
         {
             return "RC";
         }
 
-        if (normalized.Contains("ti", StringComparison.Ordinal) || normalized.Contains("t1", StringComparison.Ordinal))
+        if (normalized is "ti" or "t.i" or "t.i." or "t1" or "t.1")
         {
             return "TI";
         }
 
-        if (normalized.Contains("ce", StringComparison.Ordinal))
+        if (normalized is "ce" or "c.e" or "c.e.")
         {
             return "CE";
         }
 
-        if (normalized.Contains("cc", StringComparison.Ordinal) ||
-            normalized.Contains("co", StringComparison.Ordinal) ||
-            normalized.Contains("c0", StringComparison.Ordinal))
+        if (normalized is "cc" or "c.c" or "c.c." or "co" or "c0")
         {
             return "CC";
         }

@@ -1,0 +1,18 @@
+﻿[
+  {
+    "Nombre": "Informa: CENO A",
+    "RC": "1234567",
+    "Edad": "5 años",
+    "Fecha Nacimiento": "13/07/2020",
+    "ID Atención": "5704909",
+    "Especialidad": "Medicina General",
+    "Sexo Biológico": "Mujer",
+    "Diagnóstico": "nóstico R5IX - CEFALEA",
+    "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
+    "Procedimiento": "LAVADO PERITONEAL TERAPEUTICO VIA ABIERTA",
+    "Cama": "sis404",
+    "Número Documento": "1234567",
+    "Tipo de Documento": "CC",
+    "timestamp": "2026-03-19 19:33:33"
+  }
+]

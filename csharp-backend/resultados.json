@@ -1,18 +1,33 @@
 ﻿[
   {
-    "Nombre": "Hiaankciinn AFÍO ATDAC CICRDEC MAFI N ncac",
-    "RC": "112345678",
-    "Edad": "14 años",
-    "Fecha Nacimiento": "04/04/2011",
-    "ID Atención": "7447865",
+    "Nombre": "Menú Médico - Historia Clínica",
+    "RC": "1234567",
+    "Edad": "5 años",
+    "Fecha Nacimiento": "13/07/2020",
+    "ID Atención": "5704909",
     "Especialidad": "Medicina General",
-    "Sexo Biológico": "Hombre",
-    "Diagnóstico": "A778 - OTRAS FIEBRES MACULOSAS",
-    "Aseguradora": "3755-NUEVA EPS (CONTRIBUTIVO) SEDE HOSPITALARIA 2024",
-    "Procedimiento": "PANCREATICO",
-    "Cama": "SIS406",
-    "Número Documento": "112345678",
-    "Tipo de Documento": "TI",
-    "timestamp": "2026-03-19 15:53:40"
+    "Sexo Biológico": "Mujer",
+    "Diagnóstico": "R5IX - CEFALEA",
+    "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
+    "Procedimiento": "LAVADO PERITONEAL TERAPEUTICO VIA ABIERTA",
+    "Cama": "SIS404",
+    "Número Documento": "1234567",
+    "Tipo de Documento": "CC",
+    "timestamp": "2026-03-19 19:39:27"
+  },
+  {
+    "Nombre": "Informa: CENO A",
+    "Edad": "5 años",
+    "Fecha Nacimiento": "13/07/2020",
+    "ID Atención": "5704909",
+    "Especialidad": "Medicina General",
+    "Sexo Biológico": "Mujer",
+    "Diagnóstico": "nóstico R5IX - CEFALEA",
+    "Aseguradora": "3608 - PARTICULAR SEDE HOSPITALARIA -2023",
+    "Procedimiento": "LAVADO PERITONEAL TERAPEUTICO VIA ABIERTA",
+    "Cama": "sis404",
+    "Número Documento": "1234567",
+    "Tipo de Documento": "CC",
+    "timestamp": "2026-03-19 19:33:33"
   }
 ]
