@@ -641,13 +641,18 @@
     let archivoSeleccionado = null;
     let procesando = false;
     let overlayTimer = null;
-    const CAMPOS_FORMULARIO = ["Nombre", "RC", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento"];
+    const CAMPOS_FORMULARIO = ["Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "ID Atención", "Especialidad", "Sexo Biológico", "Diagnóstico", "Aseguradora", "Procedimiento"];
+    const LABEL_DISPLAY = { "Número Documento": "Número de Documento" };
 
     function obtenerValorCampo(datos, campo) {
         if (!datos) return "";
 
-        if (campo === "RC") {
-            return String(datos["RC"] ?? datos["Número Documento"] ?? "").trim();
+        if (campo === "Número Documento") {
+            return String(datos["Número Documento"] ?? datos["RC"] ?? "").trim();
+        }
+
+        if (campo === "Tipo de Documento") {
+            return String(datos["Tipo de Documento"] ?? "").trim();
         }
 
         return String(datos[campo] ?? "").trim();
@@ -785,7 +790,8 @@
         CAMPOS_FORMULARIO.forEach(campo => {
             const valor = obtenerValorCampo(datos, campo);
             const id = "campo_" + campo.replace(/\s+/g, "_");
-            html += `<div class="result-item"><strong>${campo}:</strong> <input id="${id}" value="${valor}" placeholder="-"></div>`;
+            const label = LABEL_DISPLAY[campo] ?? campo;
+            html += `<div class="result-item"><strong>${label}:</strong> <input id="${id}" value="${valor}" placeholder="-"></div>`;
         });
         const contenedorResultados = document.getElementById("resultados");
         contenedorResultados.classList.remove("empty-results");
@@ -808,8 +814,8 @@
 
     async function guardarManual() {
         const datos = leerDatosFormulario();
-        if (!datos["Nombre"] && !datos["RC"]) {
-            mostrarMensaje("❌ Completa al menos Nombre o RC antes de guardar", "error");
+        if (!datos["Nombre"] && !datos["Número Documento"]) {
+            mostrarMensaje("❌ Completa al menos Nombre o Número de Documento antes de guardar", "error");
             return;
         }
         try {
