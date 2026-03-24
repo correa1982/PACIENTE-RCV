@@ -36,12 +36,7 @@ public sealed class ExtractionService
         ["RC"] = new Regex(@"(?:CC|RC|C\.C\.?)\s*[:\s]*(\d[\d\s\.\-]{4,20})", DefaultOptions),
         ["Edad"] = new Regex(@"(?:Edad|Edac|Edao)\s*[:\-]?\s*(\d{1,3}\s*(?:a(?:ñ|n|fi|f|h)?os?)?)", DefaultOptions),
         ["Fecha Nacimiento"] = new Regex(@"Fecha\s*(?:de\s*)?[Nn]ac(?:imiento)?\s*[:\s]*([\d]{1,2}[/\-\.][\d]{1,2}[/\-\.][\d]{2,4})", DefaultOptions),
-        ["ID Atención"] = new Regex(@"[Ii]d\s*[:\s]*[Aa]tenci[oó]n\s*[:\s]*(\d+)", DefaultOptions),
-        ["Especialidad"] = new Regex(@"[Ee]specialidad\s*[:\s]+(.+?)(?=\n|[Ss]exo|$)", DefaultOptions | RegexOptions.Singleline),
         ["Sexo Biológico"] = new Regex(@"[Ss]exo\s*[Bb]iol[oó]gico\s*[:\s]*(\w+)", DefaultOptions),
-        ["Diagnóstico"] = new Regex(@"[Dd]iag(?:n[oó0]s?t(?:i|1|l)?co)?\s*[:\s]*(.+?)(?=\n|[Aa]seguradora|[Pp]rocedimiento|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
-        ["Aseguradora"] = new Regex(@"[Aa]seguradora\s*[:\s]*(.+?)(?=\n|[Pp]rocedimiento|$)", DefaultOptions | RegexOptions.Singleline),
-        ["Procedimiento"] = new Regex(@"[Pp]rocedimiento\s*[:\s]*(.+?)(?=\n|[Cc]ama|$)", DefaultOptions | RegexOptions.Singleline),
     };
 
     // FIX Bug 4: también estáticos para ExtractNameByDocumentContext y CleanDiagnosticoValue.
@@ -83,12 +78,7 @@ public sealed class ExtractionService
             ["Tipo de Documento"] = string.Empty,
             ["Edad"] = string.Empty,
             ["Fecha Nacimiento"] = string.Empty,
-            ["ID Atención"] = string.Empty,
-            ["Especialidad"] = string.Empty,
             ["Sexo Biológico"] = string.Empty,
-            ["Diagnóstico"] = string.Empty,
-            ["Aseguradora"] = string.Empty,
-            ["Procedimiento"] = string.Empty,
         };
 
         var edadDetectada = ExtractAgeFromLines(text);
@@ -100,8 +90,6 @@ public sealed class ExtractionService
         var (tipoDocumento, numeroDocumento) = ExtractDocumentFromLines(text);
         if (!string.IsNullOrWhiteSpace(numeroDocumento))
         {
-            // FIX Bug 6: eliminado datos["RC"] = numeroDocumento — el número se guarda
-            // bajo la clave semánticamente correcta "Número Documento".
             datos["Número Documento"] = numeroDocumento;
         }
         if (!string.IsNullOrWhiteSpace(tipoDocumento))
@@ -111,12 +99,6 @@ public sealed class ExtractionService
         else if (!string.IsNullOrWhiteSpace(numeroDocumento))
         {
             datos["Tipo de Documento"] = "CC";
-        }
-
-        var atencionDetectada = ExtractAtencionFromLines(text);
-        if (!string.IsNullOrWhiteSpace(atencionDetectada))
-        {
-            datos["ID Atención"] = atencionDetectada;
         }
 
         var nombreDetectado = ExtractNameFromLines(text);
@@ -129,49 +111,17 @@ public sealed class ExtractionService
             datos["Nombre"] = nombreDetectado;
         }
 
-        var diagnosticoDetectado = ExtractDiagnosticoFromLines(text);
-        if (!string.IsNullOrWhiteSpace(diagnosticoDetectado))
+        // Procesar los patrones para campos restantes que sí necesitamos
+        var fechaNacimientoMatch = Patrones["Fecha Nacimiento"].Match(text);
+        if (fechaNacimientoMatch.Success)
         {
-            var diagnosticoLimpio = RemovePatientNameFromDiagnostico(diagnosticoDetectado, nombreDetectado);
-            datos["Diagnóstico"] = string.IsNullOrWhiteSpace(diagnosticoLimpio)
-                ? diagnosticoDetectado
-                : diagnosticoLimpio;
+            datos["Fecha Nacimiento"] = NormalizeLine(fechaNacimientoMatch.Groups[1].Value);
         }
 
-        // FIX Bug 4: usar el diccionario estático Patrones en lugar de recrearlo aquí.
-        foreach (var (campo, regex) in Patrones)
+        var sexoBiologicoMatch = Patrones["Sexo Biológico"].Match(text);
+        if (sexoBiologicoMatch.Success)
         {
-            if (campo == "Nombre" && !string.IsNullOrWhiteSpace(datos["Nombre"]))
-                continue;
-
-            if (campo == "Edad" && !string.IsNullOrWhiteSpace(datos["Edad"]))
-                continue;
-
-            // FIX Bug 6: clave de guarda es "Número Documento", no "RC".
-            if (campo == "RC" && !string.IsNullOrWhiteSpace(datos["Número Documento"]))
-                continue;
-
-            if (campo == "ID Atención" && !string.IsNullOrWhiteSpace(datos["ID Atención"]))
-                continue;
-
-            if (campo == "Diagnóstico" && !string.IsNullOrWhiteSpace(datos["Diagnóstico"]))
-                continue;
-
-            var match = regex.Match(text);
-            if (!match.Success)
-                continue;
-
-            var valor = NormalizeLine(match.Groups[1].Value);
-            if (campo == "Diagnóstico")
-            {
-                valor = CleanDiagnosticoValue(valor);
-                var diagnosticoSinNombre = RemovePatientNameFromDiagnostico(valor, datos["Nombre"]);
-                valor = string.IsNullOrWhiteSpace(diagnosticoSinNombre) ? valor : diagnosticoSinNombre;
-            }
-
-            // FIX Bug 6: cuando el patrón "RC" coincide, guardar en "Número Documento".
-            var claveDestino = campo == "RC" ? "Número Documento" : campo;
-            datos[claveDestino] = valor;
+            datos["Sexo Biológico"] = NormalizeLine(sexoBiologicoMatch.Groups[1].Value);
         }
 
         return datos;
@@ -820,6 +770,11 @@ public sealed class ExtractionService
     private static string CleanName(string value)
     {
         var normalized = NormalizeLine(value);
+        
+        // Remover todo lo que esté entre comillas (alias o información adicional)
+        // Maneja comillas simples, dobles y comillas latinas
+        normalized = Regex.Replace(normalized, @"[""'«»""'`].*?[""'«»""'`]", " ", RegexOptions.Singleline);
+        
         normalized = NameSanitizeRegex.Replace(normalized, " ");
         normalized = normalized.Trim(" -,:;|\"'".ToCharArray());
         return WhitespaceRegex.Replace(normalized, " ").Trim();

@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Danni Mejia\\Documents\\GitHub\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj": {}
+    "d:\\GITHUB\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Danni Mejia\\Documents\\GitHub\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj": {
+    "d:\\GITHUB\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Danni Mejia\\Documents\\GitHub\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj",
+        "projectUniqueName": "d:\\GITHUB\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj",
         "projectName": "PacienteRcv",
-        "projectPath": "C:\\Users\\Danni Mejia\\Documents\\GitHub\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj",
-        "packagesPath": "C:\\Users\\Danni Mejia\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Danni Mejia\\Documents\\GitHub\\PACIENTE-RCV\\csharp-backend\\obj\\",
+        "projectPath": "d:\\GITHUB\\PACIENTE-RCV\\csharp-backend\\PacienteRcv.csproj",
+        "packagesPath": "C:\\Users\\danni.mejiac\\.nuget\\packages\\",
+        "outputPath": "d:\\GITHUB\\PACIENTE-RCV\\csharp-backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Danni Mejia\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\danni.mejiac\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"

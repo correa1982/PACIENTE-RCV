@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\PacienteRcv.props" />
-</Project>

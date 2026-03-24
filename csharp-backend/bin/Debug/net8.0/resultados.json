@@ -1,1 +1,32 @@
-﻿[]
+﻿[
+  {
+    "Nombre": "GARCIA RODRIGUEZ, ASTRID VIVIANA ASTRID",
+    "RC": "10171",
+    "Edad": "38 años",
+    "Fecha Nacimiento": "10/12/1987",
+    "ID Atención": "",
+    "Especialidad": "",
+    "Sexo Biológico": "",
+    "Diagnóstico": "",
+    "Aseguradora": "",
+    "Procedimiento": "",
+    "Tipo de Documento": "CC",
+    "Número Documento": "10171",
+    "timestamp": "2026-03-24 12:22:25"
+  },
+  {
+    "Nombre": "GARCIA RODRIGUEZ, ASTRID VIVIANA ASTRID",
+    "RC": "10171",
+    "Edad": "38 años",
+    "Fecha Nacimiento": "10/12/1987",
+    "ID Atención": "7784573",
+    "Especialidad": "",
+    "Sexo Biológico": "",
+    "Diagnóstico": "",
+    "Aseguradora": "4101-UNIVERSIDAD DE ANTIOGUIA - PROGRAMA DE SALUD 2025.",
+    "Procedimiento": "",
+    "Tipo de Documento": "CC",
+    "Número Documento": "10171",
+    "timestamp": "2026-03-24 12:16:13"
+  }
+]

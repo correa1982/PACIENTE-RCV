@@ -45,9 +45,7 @@ public sealed class RecordsController : ControllerBase
         var datos = AppState.MigrateRecord(original);
         var columnasOrden = new[]
         {
-            "Tipo de Documento", "Número Documento", "Nombre", "ID Atención",
-            "Fecha Nacimiento", "Sexo Biológico", "Edad", "Diagnóstico",
-            "Especialidad", "Aseguradora", "Procedimiento", "timestamp"
+            "Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "Sexo Biológico"
         };
 
         var ts = GetOrEmpty(datos, "timestamp");
@@ -77,9 +75,7 @@ public sealed class RecordsController : ControllerBase
         var datosMigrados = registros.Select(AppState.MigrateRecord).ToList();
         var columnasOrden = new[]
         {
-            "Tipo de Documento", "Número Documento", "Nombre", "ID Atención",
-            "Fecha Nacimiento", "Sexo Biológico", "Edad", "Diagnóstico",
-            "Especialidad", "Aseguradora", "Procedimiento", "timestamp"
+            "Nombre", "Tipo de Documento", "Número Documento", "Edad", "Fecha Nacimiento", "Sexo Biológico"
         };
 
         var nombreExcel = $"resultados_completos_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
